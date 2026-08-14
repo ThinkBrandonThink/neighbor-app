@@ -80,6 +80,8 @@ button{font-family:inherit;cursor:pointer}
 #svgwrap{position:absolute;inset:0}
 #map{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
 #map .lot{stroke:var(--line-2);stroke-width:1.4;fill:var(--neutral-lot);transition:fill .18s,stroke .18s}
+#map.gesturing .lot{transition:none}
+#map text{text-rendering:optimizeSpeed}
 #map .lot.has{fill:var(--has-fill);stroke:var(--has-stroke);stroke-width:2.6}
 #map.mode-status .lot.s1{fill:var(--s-1)}#map.mode-status .lot.s3{fill:var(--s-3)}
 #map.mode-status .lot.s4{fill:var(--s-4)}#map.mode-status .lot.s5{fill:var(--s-5)}
@@ -417,6 +419,7 @@ function fitMap(){
     pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     try{el.setPointerCapture(e.pointerId);}catch(_){}
     moved=0; panning=false;
+    mapEl.classList.add('gesturing');
     if(pts.size===1){ last={x:e.clientX,y:e.clientY}; start={x:e.clientX,y:e.clientY};
       // capture the target lot NOW, while e.target is the real element (before capture retargets)
       downLot=(e.target&&e.target.closest?e.target.closest('.lot'):null)||lotAt(e.clientX,e.clientY);
@@ -436,7 +439,8 @@ function fitMap(){
     if(pts.size===1&&last&&start){
       // measure displacement from the down point, not accumulated jitter
       moved=Math.hypot(e.clientX-start.x, e.clientY-start.y);
-      if(!panning && moved>TAP_SLOP) panning=true; // dead-zone: a tap never nudges the view
+      // dead-zone: a tap never nudges the view; once crossed, replay the slop so the map catches up to the finger
+      if(!panning && moved>TAP_SLOP){ panning=true; last={x:start.x,y:start.y}; }
       const dx=e.clientX-last.x, dy=e.clientY-last.y; last={x:e.clientX,y:e.clientY};
       if(panning){ T.x+=dx; T.y+=dy; applyT(); }
     }
@@ -448,6 +452,7 @@ function fitMap(){
     if(pts.size<2)pinch=null;
     if(pts.size===1){const p=[...pts.values()][0];last={x:p.x,y:p.y};}
     if(pts.size===0){ last=null;
+      mapEl.classList.remove('gesturing');
       if(wasTap){ const lot=downLot||lotAt(e.clientX,e.clientY);
         if(lot){ swallowNextClick(); openSheet(+lot.dataset.id); } }
       downLot=null;
