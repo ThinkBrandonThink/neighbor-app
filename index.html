@@ -448,9 +448,18 @@ function fitMap(){
     if(pts.size<2)pinch=null;
     if(pts.size===1){const p=[...pts.values()][0];last={x:p.x,y:p.y};}
     if(pts.size===0){ last=null;
-      if(wasTap){ const lot=downLot||lotAt(e.clientX,e.clientY); if(lot) openSheet(+lot.dataset.id); }
+      if(wasTap){ const lot=downLot||lotAt(e.clientX,e.clientY);
+        if(lot){ swallowNextClick(); openSheet(+lot.dataset.id); } }
       downLot=null;
     }
+  }
+  // The browser fires a synthetic click after a touch tap, hit-tested AFTER the
+  // sheet/scrim are already up — it would land on the scrim and close the sheet.
+  function swallowNextClick(){
+    const stop=ev=>{ev.stopPropagation();ev.preventDefault();off();};
+    const off=()=>document.removeEventListener('click',stop,true);
+    document.addEventListener('click',stop,true);
+    setTimeout(off,500); // in case no click follows (e.g. long press)
   }
   el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
   el.addEventListener('wheel',e=>{
