@@ -417,13 +417,14 @@ function clampT(){
   T.k=Math.max(minK,Math.min(maxK,T.k));
 }
 (function panzoom(){
-  const el=$('#mapview'); let pts=new Map(), last=null, pinch=null, moved=0, downT=0;
+  const el=$('#mapview'); let pts=new Map(), last=null, start=null, pinch=null, moved=0, panning=false, downT=0;
+  const TAP_SLOP=14; // px straight-line finger travel still counted as a tap (not a pan)
   el.addEventListener('pointerdown',e=>{
     pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     try{el.setPointerCapture(e.pointerId);}catch(_){}
-    moved=0; downT=Date.now();
-    if(pts.size===1) last={x:e.clientX,y:e.clientY};
-    if(pts.size===2){const a=[...pts.values()];pinch={d:dist(a[0],a[1]),cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2,k:T.k,x:T.x,y:T.y};}
+    moved=0; panning=false; downT=Date.now();
+    if(pts.size===1){ last={x:e.clientX,y:e.clientY}; start={x:e.clientX,y:e.clientY}; }
+    if(pts.size===2){moved=999;const a=[...pts.values()];pinch={d:dist(a[0],a[1]),cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2,k:T.k,x:T.x,y:T.y};}
   });
   el.addEventListener('pointermove',e=>{
     if(!pts.has(e.pointerId))return;
@@ -433,15 +434,18 @@ function clampT(){
       let k=pinch.k*(d/pinch.d); k=Math.max(minK,Math.min(maxK,k));
       const r=el.getBoundingClientRect(), cx=pinch.cx-r.left, cy=pinch.cy-r.top;
       const wx=(cx-pinch.x)/pinch.k, wy=(cy-pinch.y)/pinch.k;
-      T.k=k; T.x=cx-wx*k; T.y=cy-wy*k; applyT(); moved+=10; return;
+      T.k=k; T.x=cx-wx*k; T.y=cy-wy*k; applyT(); moved=999; return;
     }
-    if(pts.size===1&&last){
-      const dx=e.clientX-last.x, dy=e.clientY-last.y; moved+=Math.abs(dx)+Math.abs(dy);
-      T.x+=dx; T.y+=dy; last={x:e.clientX,y:e.clientY}; applyT();
+    if(pts.size===1&&last&&start){
+      // measure displacement from the down point, not accumulated jitter
+      moved=Math.hypot(e.clientX-start.x, e.clientY-start.y);
+      if(!panning && moved>TAP_SLOP) panning=true; // dead-zone: a tap never nudges the view
+      const dx=e.clientX-last.x, dy=e.clientY-last.y; last={x:e.clientX,y:e.clientY};
+      if(panning){ T.x+=dx; T.y+=dy; applyT(); }
     }
   });
   function up(e){
-    const wasTap = pts.has(e.pointerId) && pts.size===1 && moved<8 && Date.now()-downT<400;
+    const wasTap = pts.has(e.pointerId) && pts.size===1 && moved<=TAP_SLOP && Date.now()-downT<700;
     pts.delete(e.pointerId);
     if(pts.size<2)pinch=null;
     if(pts.size===1){const p=[...pts.values()][0];last={x:p.x,y:p.y};}
