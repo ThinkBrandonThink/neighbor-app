@@ -1,0 +1,796 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#12171d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Neighbors">
+<title>Clear Creek Neighbors</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%232e7d5b'/%3E%3Cpath d='M90 44 L134 84 H120 V138 H60 V84 H46 Z' fill='%23fff'/%3E%3Ccircle cx='90' cy='104' r='15' fill='%232e7d5b'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f5f7f5; --surface:#ffffff; --surface-2:#eef1ef; --surface-3:#e3e8e4;
+  --ink:#18222b; --ink-2:#47555f; --ink-3:#7c8a92;
+  --line:#d5ddd7; --line-2:#c3ccc6;
+  --accent:#2e7d5b; --accent-ink:#1f5b41; --accent-soft:#d9ece3;
+  --has-fill:#84c4a6; --has-stroke:#1f5b41;
+  --map-ground:#f4f1e9; --neutral-lot:#e3e1d3; --neutral-lot-ink:#57533f;
+  --shadow:0 6px 24px rgba(20,30,25,.14), 0 2px 6px rgba(20,30,25,.08);
+  --s-1:#344d8f; --s-3:#4f8fc0; --s-5:#d49028; --s-6:#c23b31; --s-9:#b9b53f; --s-0:#b8b7a6;
+  --danger:#c23b31;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, "Roboto Mono", Menlo, Consolas, monospace;
+  --safe-t: env(safe-area-inset-top,0px); --safe-b: env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10151b; --surface:#19212a; --surface-2:#212b35; --surface-3:#2b3742;
+  --ink:#e8eef1; --ink-2:#a7b4bd; --ink-3:#748089;
+  --line:#2b3742; --line-2:#38454f;
+  --accent:#4bb98c; --accent-ink:#7fd4ac; --accent-soft:#1e3a30;
+  --has-fill:#2f6f56; --has-stroke:#6fd0a8;
+  --map-ground:#20262a; --neutral-lot:#39413f; --neutral-lot-ink:#c2cbc4;
+  --shadow:0 8px 28px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.4);
+  --s-0:#5c6360;
+}}
+:root[data-theme="dark"]{
+  --bg:#10151b; --surface:#19212a; --surface-2:#212b35; --surface-3:#2b3742;
+  --ink:#e8eef1; --ink-2:#a7b4bd; --ink-3:#748089;
+  --line:#2b3742; --line-2:#38454f;
+  --accent:#4bb98c; --accent-ink:#7fd4ac; --accent-soft:#1e3a30;
+  --has-fill:#2f6f56; --has-stroke:#6fd0a8;
+  --map-ground:#20262a; --neutral-lot:#39413f; --neutral-lot-ink:#c2cbc4;
+  --shadow:0 8px 28px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.4);
+  --s-0:#5c6360;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--font);
+  -webkit-font-smoothing:antialiased;overscroll-behavior:none}
+button{font-family:inherit;cursor:pointer}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+
+/* ---- Top bar ---- */
+#topbar{position:absolute;top:0;left:0;right:0;z-index:30;padding:calc(var(--safe-t) + 8px) 10px 8px;
+  display:flex;gap:8px;align-items:center;
+  background:linear-gradient(var(--bg),color-mix(in srgb,var(--bg) 70%,transparent) 70%,transparent)}
+.search-wrap{flex:1;position:relative;display:flex;align-items:center}
+.search-wrap svg{position:absolute;left:11px;width:17px;height:17px;color:var(--ink-3);pointer-events:none}
+#search{width:100%;height:42px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:12px;padding:0 12px 0 34px;font-size:15px;box-shadow:var(--shadow)}
+#search:focus{outline:none;border-color:var(--accent)}
+.iconbtn{width:42px;height:42px;flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  border-radius:12px;display:grid;place-items:center;box-shadow:var(--shadow)}
+.iconbtn svg{width:19px;height:19px}
+.iconbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+#results{position:absolute;top:calc(var(--safe-t) + 58px);left:10px;right:10px;z-index:29;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  max-height:52vh;overflow:auto;display:none}
+#results.show{display:block}
+.res{display:flex;gap:10px;align-items:center;padding:11px 13px;border-bottom:1px solid var(--line);cursor:pointer}
+.res:last-child{border-bottom:none}
+.res:active{background:var(--surface-2)}
+.res .ra{font-family:var(--mono);font-size:12px;color:var(--ink-3);flex:none;width:64px}
+.res .rn{font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res .rt{font-size:11px;color:var(--ink-2)}
+.res-empty{padding:16px;color:var(--ink-3);font-size:14px;text-align:center}
+
+/* ---- Map ---- */
+#mapview{position:absolute;inset:0;touch-action:none;background:var(--bg);overflow:hidden}
+#svgwrap{position:absolute;inset:0}
+#map{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+#map .lot{stroke:var(--line-2);stroke-width:1.4;fill:var(--neutral-lot);transition:fill .18s,stroke .18s}
+#map .lot.has{fill:var(--has-fill);stroke:var(--has-stroke);stroke-width:2.6}
+#map.mode-status .lot.s1{fill:var(--s-1)}#map.mode-status .lot.s3{fill:var(--s-3)}
+#map.mode-status .lot.s5{fill:var(--s-5)}#map.mode-status .lot.s6{fill:var(--s-6)}
+#map.mode-status .lot.s9{fill:var(--s-9)}
+#map .lot.sel{stroke:var(--ink);stroke-width:3.4}
+#map .lotnum{fill:var(--neutral-lot-ink);font-family:var(--mono);font-size:15px;font-weight:600;text-anchor:middle;
+  pointer-events:none;dominant-baseline:central}
+#map .lotnum.hn{fill:var(--has-stroke);font-weight:700}
+#map.mode-status .lotnum.act{fill:#fff}
+#map .pin{fill:#1e7052;stroke:#fff;stroke-width:2.2;pointer-events:none}
+#map .pcount{fill:#fff;font-family:var(--font);font-weight:700;text-anchor:middle;
+  dominant-baseline:central;pointer-events:none}
+#map .streetlbl{fill:#33383d;stroke:#fff;stroke-width:5;paint-order:stroke;stroke-linejoin:round;
+  font-family:var(--font);font-weight:600;text-anchor:middle;dominant-baseline:central}
+
+/* ---- Bottom controls ---- */
+#botbar{position:absolute;left:0;right:0;bottom:0;z-index:20;padding:8px 10px calc(var(--safe-b) + 8px);
+  display:flex;gap:8px;align-items:flex-end;pointer-events:none;
+  background:linear-gradient(transparent,color-mix(in srgb,var(--bg) 78%,transparent) 42%)}
+#botbar>*{pointer-events:auto}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.seg button{border:none;background:transparent;color:var(--ink-2);padding:0 14px;height:42px;font-size:13.5px;font-weight:600}
+.seg button.on{background:var(--accent);color:#fff}
+.spacer{flex:1}
+#zoomcol{display:flex;flex-direction:column;gap:6px}
+.zbtn{width:42px;height:42px}
+#legend{position:absolute;left:10px;bottom:calc(var(--safe-b) + 60px);z-index:22;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+  padding:9px 11px;display:none;max-width:190px}
+#legend.show{display:block}
+#legend h4{margin:0 0 7px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.leg{display:flex;align-items:center;gap:8px;font-size:12.5px;margin:5px 0;color:var(--ink-2)}
+.leg i{width:14px;height:14px;border-radius:4px;flex:none;border:1px solid rgba(0,0,0,.15)}
+
+/* ---- List view ---- */
+#listview{position:absolute;inset:0;z-index:15;background:var(--bg);display:none;flex-direction:column;
+  padding-top:calc(var(--safe-t) + 58px)}
+#listview.show{display:flex}
+#listscroll{flex:1;overflow:auto;padding:4px 10px calc(var(--safe-b) + 76px)}
+.lgroup{margin:16px 2px 6px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.lrow{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);
+  border-radius:13px;padding:11px 13px;margin-bottom:8px}
+.lrow:active{background:var(--surface-2)}
+.lrow .laddr{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.lrow .lname{font-size:15px;font-weight:600;margin-top:1px}
+.lrow .lppl{font-size:13px;color:var(--ink-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .lstat{margin-left:auto;flex:none}
+.avstack{display:flex;flex:none}
+.avstack .av{width:34px;height:34px;border-radius:50%;margin-left:-9px;border:2px solid var(--surface);
+  background:var(--surface-3);overflow:hidden;display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--ink-2)}
+.avstack .av:first-child{margin-left:0}
+.avstack .av img{width:100%;height:100%;object-fit:cover}
+.pill{font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:3px 8px;border-radius:999px;white-space:nowrap;
+  text-transform:uppercase;color:#fff}
+.pill.s1{background:var(--s-1)}.pill.s3{background:var(--s-3)}.pill.s5{background:var(--s-5)}
+.pill.s6{background:var(--s-6)}.pill.s9{background:var(--s-9)}.pill.s0{background:var(--s-0)}
+.list-empty{text-align:center;color:var(--ink-3);padding:60px 20px;font-size:15px;line-height:1.5}
+
+/* ---- Sheet / modal ---- */
+#scrim{position:fixed;inset:0;z-index:40;background:rgba(10,16,14,.5);opacity:0;pointer-events:none;
+  transition:opacity .22s}
+#scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--surface);
+  border-radius:20px 20px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.28);
+  transform:translateY(102%);transition:transform .28s cubic-bezier(.32,.72,0,1);
+  max-height:92vh;display:flex;flex-direction:column;padding-bottom:var(--safe-b)}
+.sheet.show{transform:translateY(0)}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:9px auto 2px;flex:none}
+.sheet-head{padding:6px 18px 12px;border-bottom:1px solid var(--line);flex:none}
+.sheet-head .eyebrow{font-family:var(--mono);font-size:12px;color:var(--ink-3);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sheet-head h2{margin:4px 0 0;font-size:20px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.sheet-head .sub{font-size:13px;color:var(--ink-2);margin-top:3px}
+.sheet-body{overflow:auto;padding:6px 16px 16px;flex:1}
+.section-label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:700;
+  margin:16px 4px 8px;display:flex;align-items:center;justify-content:space-between}
+
+.person{display:flex;gap:12px;align-items:flex-start;padding:11px;border:1px solid var(--line);
+  border-radius:13px;margin-bottom:9px;background:var(--surface)}
+.person .pav{width:52px;height:52px;border-radius:13px;flex:none;overflow:hidden;background:var(--surface-3);
+  display:grid;place-items:center;font-size:20px;font-weight:700;color:var(--ink-2)}
+.person .pav img{width:100%;height:100%;object-fit:cover}
+.person .pinfo{flex:1;min-width:0}
+.person .pn{font-size:16px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:999px;
+  background:var(--surface-3);color:var(--ink-2)}
+.tag.pet{background:var(--accent-soft);color:var(--accent-ink)}
+.person .pnote{font-size:13.5px;color:var(--ink-2);margin-top:3px;line-height:1.4;white-space:pre-wrap}
+.person .pedit{border:none;background:transparent;color:var(--ink-3);padding:4px;flex:none}
+.person .pedit svg{width:18px;height:18px;display:block}
+.empty-ppl{color:var(--ink-3);font-size:14px;padding:6px 4px 2px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:46px;padding:0 18px;
+  border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:15px;font-weight:600}
+.btn svg{width:18px;height:18px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.block{display:flex;width:100%}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--line))}
+.btn:active{transform:translateY(1px)}
+.row-btns{display:flex;gap:9px;margin-top:6px}
+
+label.fld{display:block;margin:12px 0}
+label.fld .lab{font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:5px;display:block}
+.inp{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:11px;
+  padding:11px 12px;font-size:16px;font-family:inherit}
+.inp:focus{outline:none;border-color:var(--accent)}
+textarea.inp{resize:vertical;min-height:74px;line-height:1.4}
+.kindsel{display:flex;gap:8px}
+.kindsel button{flex:1;height:44px;border:1px solid var(--line);background:var(--bg);color:var(--ink-2);
+  border-radius:11px;font-size:14px;font-weight:600}
+.kindsel button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+.photopick{display:flex;gap:12px;align-items:center;margin:12px 0}
+.photopick .pv{width:64px;height:64px;border-radius:14px;background:var(--surface-3);overflow:hidden;
+  display:grid;place-items:center;color:var(--ink-3);flex:none}
+.photopick .pv img{width:100%;height:100%;object-fit:cover}
+.mini{font-size:13px;color:var(--accent-ink);background:none;border:none;padding:6px 4px;font-weight:600}
+
+.field-note{font-size:12.5px;color:var(--ink-3);line-height:1.5;margin:4px 2px}
+.field-note code{font-family:var(--mono);font-size:11.5px;background:var(--surface-2);padding:1px 5px;border-radius:5px;
+  word-break:break-all}
+.menu-item{display:flex;gap:13px;align-items:center;width:100%;text-align:left;border:none;background:transparent;
+  color:var(--ink);padding:14px 6px;font-size:15.5px;border-bottom:1px solid var(--line)}
+.menu-item svg{width:20px;height:20px;color:var(--ink-2);flex:none}
+.menu-item small{display:block;color:var(--ink-3);font-size:12.5px;font-weight:400;margin-top:2px}
+.menu-item:last-child{border-bottom:none}
+.toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 90px);transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:11px;font-size:14px;font-weight:600;
+  z-index:60;opacity:0;transition:.25s;pointer-events:none;box-shadow:var(--shadow);max-width:88vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="app">
+  <div id="mapview">
+    <div id="svgwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  </div>
+
+  <div id="listview"><div id="listscroll"></div></div>
+
+  <div id="topbar">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" type="search" placeholder="Search neighbor or address" autocomplete="off" enterkeyhint="search">
+    </div>
+    <button class="iconbtn" id="menuBtn" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
+  <div id="results"></div>
+
+  <div id="legend"></div>
+
+  <div id="botbar">
+    <div class="seg" id="viewSeg">
+      <button data-view="map" class="on">Map</button>
+      <button data-view="list">List</button>
+    </div>
+    <div class="seg" id="modeSeg">
+      <button data-mode="neighbors" class="on">Neighbors</button>
+      <button data-mode="status">For sale</button>
+    </div>
+    <div class="spacer"></div>
+    <div id="zoomcol">
+      <button class="iconbtn zbtn" id="legBtn" aria-label="Legend">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="7" r="2.5"/><path d="M11 7h9"/><circle cx="6" cy="17" r="2.5"/><path d="M11 17h9"/></svg>
+      </button>
+      <button class="iconbtn zbtn" id="zoomIn" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="iconbtn zbtn" id="zoomOut" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<div id="scrim"></div>
+
+<script id="lotdata" type="application/json">{"community":"Clear Creek Townhomes","city":"Logan, UT","source":"platwidget.com sp=8406477132aa9212d423e56a84692506","captured":"2026-08-14","viewBox":"0 0 1650 2000","statusLegend":{"0":"No Status","1":"Move In Ready","2":"Unavailable","3":"Under Construction","4":"Home For Sale","5":"Under Contract","6":"Sold","7":"Lot Sale Pending","8":"Lot Option Pending","9":"Coming Soon","10":"Sales Model"},"lots":[{"id":108801,"lot":"4","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":345.4,"cy":337.7,"d":"M365.504 275.263v124.618l-40.117.173V275.263z"},{"id":108802,"lot":"5","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":387.7,"cy":337.6,"d":"M409.959 275.263v124.415l-44.455.203V275.263z"},{"id":108803,"lot":"6","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":432.2,"cy":337.5,"d":"M454.413 275.263V399.49l-44.454.188V275.263z"},{"id":108804,"lot":"7","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":477.4,"cy":337.4,"d":"M500.313 275.263v124.025l-45.9.202V275.263z"},{"id":108805,"lot":"8","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":524,"cy":337.3,"d":"M547.659 275.263v123.808l-47.346.217V275.263z"},{"id":108806,"lot":"9","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":569.2,"cy":337.2,"d":"M590.668 275.263v123.62l-43.009.188V275.263z"},{"id":108807,"lot":"10","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":610.9,"cy":337.1,"d":"M631.147 275.263V398.71l-40.479.173v-123.62z"},{"id":108808,"lot":"11","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":740.7,"cy":336.8,"d":"M761.258 275.263v122.868l-41.202.188V275.263z"},{"id":108809,"lot":"12","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":783.3,"cy":336.7,"d":"M805.351 275.263v122.68l-44.093.188V275.263z"},{"id":108810,"lot":"13","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":827.8,"cy":336.6,"d":"M850.167 275.263v122.492l-44.816.188v-122.68z"},{"id":108811,"lot":"14","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":872.6,"cy":336.5,"d":"M894.983 275.263v122.29l-44.816.202V275.263z"},{"id":108812,"lot":"15","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":917.4,"cy":336.4,"d":"M939.799 275.263v122.088l-44.816.202v-122.29z"},{"id":108813,"lot":"16","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":962.2,"cy":336.3,"d":"M984.615 275.263v121.9l-44.816.188V275.263z"},{"id":108814,"lot":"17","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1005.6,"cy":336.2,"d":"M1026.54 275.263v121.712l-41.925.188v-121.9z"},{"id":108815,"lot":"18","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1088.7,"cy":336,"d":"M1108.943 275.263v121.35l-40.479.174V275.263z"},{"id":108816,"lot":"19","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1131,"cy":335.9,"d":"M1153.036 275.263v121.148l-44.093.202v-121.35z"},{"id":108817,"lot":"20","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1175.1,"cy":335.8,"d":"M1197.129 275.263v120.96l-44.093.188V275.263z"},{"id":108818,"lot":"21","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1219.9,"cy":335.7,"d":"M1242.668 275.263v120.758l-45.539.202v-120.96z"},{"id":108819,"lot":"22","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1266.2,"cy":335.6,"d":"M1289.653 275.263v120.555l-46.985.203V275.263z"},{"id":108820,"lot":"23","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1311.7,"cy":335.5,"d":"M1333.746 275.263v120.353l-44.093.202V275.263z"},{"id":108821,"lot":"24","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1354,"cy":335.4,"d":"M1374.225 275.263v120.179l-40.479.174V275.263z"},{"id":108822,"lot":"25","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1001.2,"cy":518.6,"d":"M1020.034 456.276v124.748h-37.588V456.436z"},{"id":108823,"lot":"26","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":959.3,"cy":518.7,"d":"M982.446 456.436v124.588h-46.261V456.652z"},{"id":108824,"lot":"27","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":914.5,"cy":518.8,"d":"M936.185 456.652v124.372h-43.371V456.84z"},{"id":108825,"lot":"28","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":870.4,"cy":518.9,"d":"M892.814 456.84v124.184h-44.816V457.028z"},{"id":108826,"lot":"29","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":824.1,"cy":519,"d":"M847.998 457.028v123.996h-47.707V457.245z"},{"id":108827,"lot":"30","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":778.6,"cy":519.1,"d":"M800.291 457.245v123.779h-43.37V457.433z"},{"id":108828,"lot":"31","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":736,"cy":519.2,"d":"M756.921 457.433v123.591h-41.925V457.621z"},{"id":108829,"lot":"32","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":610.9,"cy":519.5,"d":"M631.147 457.982v123.042h-40.479V458.156z"},{"id":108830,"lot":"33","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":569.2,"cy":519.6,"d":"M590.668 458.156v122.868h-43.009v-122.68z"},{"id":108831,"lot":"34","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":524,"cy":519.7,"d":"M547.659 458.344v122.68h-47.346V458.561z"},{"id":108832,"lot":"35","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":477.4,"cy":519.8,"d":"M500.313 458.561v122.463h-45.9V458.763z"},{"id":108833,"lot":"36","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":432.2,"cy":519.9,"d":"M454.413 458.763v122.261h-44.454V458.966z"},{"id":108834,"lot":"37","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":387.7,"cy":520,"d":"M409.959 458.966v122.058h-44.455V459.153z"},{"id":108835,"lot":"38","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":344.4,"cy":520.1,"d":"M365.504 459.153v121.871H323.29V459.341z"},{"id":108836,"lot":"39","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":350,"cy":834.6,"d":"M370.564 772.576v123.822l-41.202.203V772.576z"},{"id":108837,"lot":"40","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":392.1,"cy":834.5,"d":"M413.573 772.576v123.605l-43.009.217V772.576z"},{"id":108838,"lot":"41","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":436.5,"cy":834.4,"d":"M459.473 772.576V895.95l-45.9.231V772.576z"},{"id":108839,"lot":"42","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":482.4,"cy":834.3,"d":"M505.373 772.576v123.143l-45.9.231V772.576z"},{"id":108840,"lot":"43","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":528.3,"cy":834.1,"d":"M551.273 772.576v122.911l-45.9.232V772.576z"},{"id":108841,"lot":"44","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":572.8,"cy":834,"d":"M594.282 772.576v122.695l-43.009.216V772.576z"},{"id":108842,"lot":"45","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":614.5,"cy":833.9,"d":"M634.761 772.576v122.492l-40.479.203V772.576z"},{"id":108843,"lot":"46","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":741.9,"cy":833.6,"d":"M762.342 772.576v121.856l-40.84.202V772.576z"},{"id":108844,"lot":"47","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":785.1,"cy":833.5,"d":"M807.881 772.576v121.625l-45.539.231V772.576z"},{"id":108845,"lot":"48","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":827.8,"cy":833.4,"d":"M847.637 772.576v121.422l-39.756.203V772.576z"},{"id":108846,"lot":"49","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":871.1,"cy":833.3,"d":"M894.622 772.576v121.191l-46.985.231V772.576z"},{"id":108847,"lot":"50","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":918.1,"cy":833.2,"d":"M941.606 772.576v120.945l-46.984.246V772.576z"},{"id":108848,"lot":"51","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":963.1,"cy":833,"d":"M984.615 772.576v120.728l-43.009.217V772.576z"},{"id":108849,"lot":"52","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1005.2,"cy":832.9,"d":"M1025.817 772.576v120.526l-41.202.202V772.576z"},{"id":108850,"lot":"53","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1144.2,"cy":806.2,"d":"M1205.529 826.789h-122.608v-41.202h122.521z"},{"id":108851,"lot":"54","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1144.2,"cy":763,"d":"M1205.442 785.587h-122.521V740.41h122.434z"},{"id":108852,"lot":"55","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1144.1,"cy":719,"d":"M1205.355 740.41h-122.434v-42.778h122.347z"},{"id":108853,"lot":"56","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1144.1,"cy":674.5,"d":"M1205.268 697.632h-122.347v-46.204h122.246z"},{"id":108854,"lot":"57","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1144,"cy":629.1,"d":"M1205.167 651.428h-122.246v-44.743h122.16z"},{"id":108855,"lot":"58","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1144,"cy":585,"d":"M1205.081 606.685h-122.16v-43.298h122.073z"},{"id":108856,"lot":"59","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1144,"cy":541.8,"d":"M1204.994 563.387h-122.073v-43.082h121.986z"},{"id":108857,"lot":"60","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1326.2,"cy":542,"d":"M1388.277 520.667v42.72h-124.011l-.086-42.72z"},{"id":108858,"lot":"61","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1326.3,"cy":585,"d":"M1388.277 563.387v43.298h-123.924l-.087-43.298z"},{"id":108859,"lot":"62","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1326.3,"cy":629.1,"d":"M1388.277 606.685v44.743h-123.822l-.102-44.743z"},{"id":108860,"lot":"63","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1326.4,"cy":674.5,"d":"M1388.277 651.428v46.204h-123.736l-.086-46.204z"},{"id":108861,"lot":"64","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1326.4,"cy":718.1,"d":"M1388.277 697.632v40.971h-123.649l-.087-40.971z"},{"id":108862,"lot":"65","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1371.7,"cy":1013.5,"d":"M1393.018 950.539v125.99h-42.647V950.756z"},{"id":108863,"lot":"66","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1328.5,"cy":1013.6,"d":"M1350.371 950.756v125.773h-43.732V950.972z"},{"id":108864,"lot":"67","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1285.5,"cy":1013.8,"d":"M1306.639 950.972v125.557h-42.286V951.175h.709z"},{"id":108865,"lot":"68","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1242.3,"cy":1013.9,"d":"M1264.353 951.175v125.354h-44.093V951.406z"},{"id":108866,"lot":"69","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":1198.2,"cy":1014,"d":"M1220.26 951.406v125.123h-44.093V951.623l29.622-.145z"},{"id":108867,"lot":"70","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":962.8,"cy":1014.6,"d":"M984.008 952.592v123.937h-42.402V952.808z"},{"id":108868,"lot":"71","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":920.1,"cy":1014.7,"d":"M941.606 952.808v123.721h-43.009V953.04z"},{"id":108869,"lot":"72","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":876.9,"cy":1014.8,"d":"M898.597 953.04v123.489h-43.37V953.286z"},{"id":108870,"lot":"73","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":831.7,"cy":1014.9,"d":"M855.588 953.286v123.243h-47.707V953.473z"},{"id":108871,"lot":"74","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":785.1,"cy":1015,"d":"M807.881 953.473v123.056h-45.539V953.705z"},{"id":108872,"lot":"75","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":741.2,"cy":1015.1,"d":"M762.342 953.705v122.824h-42.286V953.922z"},{"id":108873,"lot":"76","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":698.7,"cy":1015.2,"d":"M720.056 953.922v122.607h-42.647v-122.39z"},{"id":108874,"lot":"77","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":614.7,"cy":1015.4,"d":"M635.123 954.341v122.188h-40.841V954.543z"},{"id":108875,"lot":"78","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":572.8,"cy":1015.5,"d":"M594.282 954.543v121.986h-43.009V954.76z"},{"id":108876,"lot":"79","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":528.3,"cy":1015.6,"d":"M551.273 954.76v121.769h-45.9V954.991z"},{"id":108877,"lot":"80","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":482.4,"cy":1015.8,"d":"M505.373 954.991v121.538h-45.9V955.223z"},{"id":108878,"lot":"81","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":436.5,"cy":1015.9,"d":"M459.473 955.223v121.306h-45.9V955.454z"},{"id":108879,"lot":"82","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":392.1,"cy":1016,"d":"M413.573 955.454v121.075h-43.009V955.671z"},{"id":108880,"lot":"83","block":"1","addr":"","status":0,"statusLabel":"No Status","price":0,"cx":350.1,"cy":1016.1,"d":"M370.564 955.671v120.858h-40.84V955.873z"},{"id":108881,"lot":"84","block":"1","addr":"873 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":349.6,"cy":1191.5,"d":"M372.371 1129.889v122.998l-45.539.174v-123.172z"},{"id":108882,"lot":"85","block":"1","addr":"871 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":393.7,"cy":1191.4,"d":"M415.018 1129.889v122.825l-42.647.173v-122.998z"},{"id":108883,"lot":"86","block":"1","addr":"869 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":437.8,"cy":1191.3,"d":"M460.557 1129.889v122.652l-45.539.173v-122.825z"},{"id":108884,"lot":"87","block":"1","addr":"867 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":480.8,"cy":1191.2,"d":"M501.036 1129.889v122.507l-40.479.145v-122.652z"},{"id":108885,"lot":"88","block":"1","addr":"865 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":522.7,"cy":1191.1,"d":"M544.406 1129.889v122.334l-43.37.173v-122.507z"},{"id":108886,"lot":"89","block":"1","addr":"853 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":788.5,"cy":1190.6,"d":"M810.772 1129.889v121.307l-44.454.173v-121.48z"},{"id":108887,"lot":"90","block":"1","addr":"851 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":832.3,"cy":1190.5,"d":"M853.781 1129.889v121.148l-43.009.159v-121.307z"},{"id":108888,"lot":"91","block":"1","addr":"849 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":875.6,"cy":1190.5,"d":"M897.513 1129.889v120.989l-43.732.159v-121.148z"},{"id":108889,"lot":"92","block":"1","addr":"847 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":919,"cy":1190.4,"d":"M940.522 1129.889v120.83l-43.009.159v-120.989z"},{"id":108890,"lot":"93","block":"1","addr":"845 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":962.5,"cy":1190.3,"d":"M984.557 1129.889v120.656l-44.035.174v-120.83z"},{"id":108891,"lot":"94","block":"1","addr":"817 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1198.9,"cy":1189.8,"d":"M1220.26 1129.889v119.76l-42.647.159v-119.919z"},{"id":108892,"lot":"95","block":"1","addr":"813 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1242.3,"cy":1189.8,"d":"M1264.353 1129.889v119.587l-44.093.173v-119.76z"},{"id":108893,"lot":"96","block":"1","addr":"809 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1285.5,"cy":1189.7,"d":"M1306.639 1129.889v119.428l-42.286.159v-119.587z"},{"id":108894,"lot":"97","block":"1","addr":"805 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1328.5,"cy":1189.6,"d":"M1350.371 1129.889v119.254l-43.732.174v-119.428z"},{"id":108895,"lot":"98","block":"1","addr":"801 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1372.8,"cy":1189.5,"d":"M1395.187 1129.889v119.081l-44.816.173v-119.254z"},{"id":108896,"lot":"99","block":"1","addr":"802 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1369.3,"cy":1370.8,"d":"M1391.573 1308.257v124.993h-44.455v-124.82z"},{"id":108897,"lot":"100","block":"1","addr":"806 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1325.6,"cy":1370.8,"d":"M1347.118 1308.43v124.82h-43.009v-124.661z"},{"id":108898,"lot":"101","block":"1","addr":"810 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1282.2,"cy":1370.9,"d":"M1304.109 1308.589v124.661h-43.731v-124.487z"},{"id":108899,"lot":"102","block":"1","addr":"814 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1238.9,"cy":1371,"d":"M1260.378 1308.763v124.487h-43.009v-124.328z"},{"id":108900,"lot":"103","block":"1","addr":"818 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":1195.3,"cy":1371.1,"d":"M1217.369 1308.922v124.328h-44.093v-124.155z"},{"id":108901,"lot":"104","block":"1","addr":"844 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":964.7,"cy":1371.5,"d":"M984.976 1309.818v123.432h-40.479v-123.273z"},{"id":108902,"lot":"105","block":"1","addr":"846 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":922.3,"cy":1371.6,"d":"M944.497 1309.977v123.273h-44.454v-123.114z"},{"id":108903,"lot":"106","block":"1","addr":"848 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":878.4,"cy":1371.7,"d":"M900.043 1310.136v123.114h-43.37v-122.94z"},{"id":108904,"lot":"107","block":"1","addr":"850 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":833.9,"cy":1371.8,"d":"M856.673 1310.31v122.94h-45.539v-122.767z"},{"id":108905,"lot":"108","block":"1","addr":"854 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":788,"cy":1371.9,"d":"M811.134 1310.483v122.767h-46.262v-122.593z"},{"id":108906,"lot":"109","block":"1","addr":"856 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":743,"cy":1372,"d":"M764.872 1310.657v122.593H721.14v-122.434z"},{"id":108907,"lot":"110","block":"1","addr":"858 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":700.4,"cy":1372,"d":"M721.14 1310.816v122.434h-41.563v-122.275z"},{"id":108908,"lot":"111","block":"1","addr":"862 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":617.4,"cy":1372.2,"d":"M637.653 1311.134v122.116h-40.479v-121.957z"},{"id":108909,"lot":"112","block":"1","addr":"864 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":574.6,"cy":1372.3,"d":"M597.174 1311.293v121.957h-45.178v-121.784z"},{"id":108910,"lot":"113","block":"1","addr":"866 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":530.3,"cy":1372.4,"d":"M551.996 1311.466v121.784h-43.37v-121.625z"},{"id":108911,"lot":"114","block":"1","addr":"868 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":484.6,"cy":1372.4,"d":"M508.626 1311.625v121.625h-48.069v-121.437z"},{"id":108912,"lot":"115","block":"1","addr":"870 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":437.8,"cy":1372.5,"d":"M460.557 1311.813v121.437h-45.539v-121.263z"},{"id":108913,"lot":"116","block":"1","addr":"872 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":393.7,"cy":1372.6,"d":"M415.018 1311.987v121.263h-42.647v-121.104z"},{"id":108914,"lot":"117","block":"1","addr":"874 Monte Vista Ln.","status":0,"statusLabel":"No Status","price":0,"cx":351.8,"cy":1372.7,"d":"M372.371 1312.146v121.104h-41.202v-120.945z"},{"id":108915,"lot":"118","block":"1","addr":"867 Altura Vista Ln","status":6,"statusLabel":"Sold","price":0,"cx":352.5,"cy":1546.4,"d":"M372.371 1484.875v122.969l-39.756.13v-123.099z"},{"id":108916,"lot":"119","block":"1","addr":"863 Altura Vista Ln","status":5,"statusLabel":"Under Contract","price":0,"cx":393.7,"cy":1546.4,"d":"M415.018 1484.875v122.839l-42.647.13v-122.969z"},{"id":108917,"lot":"120","block":"1","addr":"859 Altura Vista Ln","status":6,"statusLabel":"Sold","price":0,"cx":437.8,"cy":1546.3,"d":"M460.557 1484.875v122.695l-45.539.144v-122.839z"},{"id":108918,"lot":"121","block":"1","addr":"855 Altura Vista Ln.","status":5,"statusLabel":"Under Contract","price":0,"cx":483.7,"cy":1546.2,"d":"M506.819 1484.875v122.55l-46.262.145v-122.695z"},{"id":108919,"lot":"122","block":"1","addr":"853 Altura Vista Ln","status":5,"statusLabel":"Under Contract","price":0,"cx":529.9,"cy":1546.2,"d":"M553.081 1484.875v122.406l-46.262.144v-122.55z"},{"id":108920,"lot":"123","block":"1","addr":"849 Altura Vista Ln","status":5,"statusLabel":"Under Contract","price":0,"cx":574.8,"cy":1546.1,"d":"M596.451 1484.875v122.261l-43.37.145v-122.406z"},{"id":108921,"lot":"124","block":"1","addr":"847 Altura Vista Ln","status":5,"statusLabel":"Under Contract","price":0,"cx":617.1,"cy":1546,"d":"M637.653 1484.875v122.131l-41.202.13v-122.261z"},{"id":108922,"lot":"125","block":"1","addr":"845 Altura Vista Ln.","status":5,"statusLabel":"Under Contract","price":0,"cx":700.2,"cy":1545.9,"d":"M720.056 1484.875v121.871l-39.756.13v-122.001z"},{"id":108923,"lot":"126","block":"1","addr":"843 Altura Vista Ln.","status":3,"statusLabel":"Under Construction","price":321900,"cx":742.5,"cy":1545.8,"d":"M764.872 1484.875v121.726l-44.816.145v-121.871z"},{"id":108924,"lot":"127","block":"1","addr":"841 Altura Vista Ln.","status":3,"statusLabel":"Under Construction","price":339900,"cx":786.7,"cy":1545.7,"d":"M808.604 1484.875v121.596l-43.732.13v-121.726z"},{"id":108925,"lot":"128","block":"1","addr":"839 Altura Vista Ln.","status":3,"statusLabel":"Under Construction","price":319900,"cx":831.6,"cy":1545.7,"d":"M854.504 1484.875v121.451l-45.9.145v-121.596z"},{"id":108926,"lot":"129","block":"1","addr":"837 Altura Vista Ln.","status":5,"statusLabel":"Under Contract","price":0,"cx":877.3,"cy":1545.6,"d":"M900.043 1484.875v121.307l-45.539.144v-121.451z"},{"id":108927,"lot":"130","block":"1","addr":"835 Altura Vista Ln.","status":3,"statusLabel":"Under Construction","price":322900,"cx":922.1,"cy":1545.5,"d":"M944.136 1484.875v121.162l-44.093.145v-121.307z"},{"id":108928,"lot":"131","block":"1","addr":"833 Altura Vista Ln.","status":5,"statusLabel":"Under Contract","price":0,"cx":964.6,"cy":1545.5,"d":"M984.976 1484.875v121.032l-40.84.13v-121.162z"},{"id":108929,"lot":"132","block":"1","addr":"819 Altura Vista Ln.","status":9,"statusLabel":"Coming Soon","price":0,"cx":1195.9,"cy":1545.1,"d":"M1217.369 1484.875v120.295l-43.009.13v-120.425z"},{"id":108930,"lot":"133","block":"1","addr":"815 Altura Vista Ln.","status":9,"statusLabel":"Coming Soon","price":0,"cx":1238.9,"cy":1545,"d":"M1260.378 1484.875v120.15l-43.009.145v-120.295z"},{"id":108931,"lot":"134","block":"1","addr":"811 Altura Vista Ln.","status":9,"statusLabel":"Coming Soon","price":0,"cx":1282.2,"cy":1545,"d":"M1304.109 1484.875v120.02l-43.731.13v-120.15z"},{"id":108932,"lot":"135","block":"1","addr":"807 Altura Vista Ln.","status":9,"statusLabel":"Coming Soon","price":0,"cx":1325.6,"cy":1544.9,"d":"M1347.118 1484.875v119.876l-43.009.144v-120.02z"},{"id":108933,"lot":"136","block":"1","addr":"803 Altura Vista Ln.","status":9,"statusLabel":"Coming Soon","price":0,"cx":1370.1,"cy":1544.8,"d":"M1393.018 1484.875v119.731l-45.9.145v-119.876z"},{"id":108934,"lot":"137","block":"1","addr":"804 Altura Vista Ln.","status":5,"statusLabel":"Under Contract","price":0,"cx":1362.3,"cy":1725.7,"d":"M1382.176 1663.908v123.533h-39.756v-123.403z"},{"id":108935,"lot":"138","block":"1","addr":"808 Altura Vista Ln.","status":3,"statusLabel":"Under Construction","price":323900,"cx":1319.7,"cy":1725.7,"d":"M1342.42 1664.038v123.403h-45.539v-123.259z"},{"id":108936,"lot":"139","block":"1","addr":"812 Altura Vista Ln.","status":3,"statusLabel":"Under Construction","price":339900,"cx":1275.6,"cy":1725.8,"d":"M1296.881 1664.182v123.259h-42.647v-123.128z"},{"id":108937,"lot":"140","block":"1","addr":"816 Altura Vista Ln.","status":3,"statusLabel":"Under Construction","price":321900,"cx":1231.3,"cy":1725.9,"d":"M1254.234 1664.313v123.128h-45.901v-122.984z"},{"id":108938,"lot":"141","block":"1","addr":"820 Altura Vista Ln.","status":3,"statusLabel":"Under Construction","price":339900,"cx":1184.7,"cy":1725.9,"d":"M1208.333 1664.457v122.984h-47.346v-122.825z"},{"id":108939,"lot":"142","block":"1","addr":"824 Altura Vista Ln.","status":3,"statusLabel":"Under Construction","price":323900,"cx":1139.5,"cy":1726,"d":"M1160.987 1664.616v122.825h-43.008v-122.695z"},{"id":108940,"lot":"143","block":"1","addr":"826 Altura Vista Ln.","status":5,"statusLabel":"Under Contract","price":0,"cx":1097.7,"cy":1726.1,"d":"M1117.979 1664.746v122.695H1077.5v-122.565z"},{"id":108941,"lot":"144","block":"1","addr":"830 Altura Vista Ln.","status":5,"statusLabel":"Under Contract","price":0,"cx":1013.9,"cy":1726.2,"d":"M1034.129 1665.021v122.42H993.65v-122.29z"},{"id":108942,"lot":"145","block":"1","addr":"832 Altura Vista Ln.","status":6,"statusLabel":"Sold","price":0,"cx":971.8,"cy":1726.3,"d":"M993.65 1665.151v122.29h-43.731v-122.16z"},{"id":108943,"lot":"146","block":"1","addr":"834 Altura Vista Ln.","status":6,"statusLabel":"Sold","price":0,"cx":928.2,"cy":1726.4,"d":"M949.919 1665.281v122.16h-43.371v-122.015z"},{"id":108944,"lot":"147","block":"1","addr":"836 Altura Vista Ln.","status":6,"statusLabel":"Sold","price":0,"cx":883.4,"cy":1726.4,"d":"M906.548 1665.426v122.015h-46.261V1665.57z"},{"id":108945,"lot":"148","block":"1","addr":"838 Altura Vista Ln.","status":6,"statusLabel":"Sold","price":0,"cx":837.2,"cy":1726.5,"d":"M860.287 1665.57v121.871h-46.262v-121.726z"},{"id":108946,"lot":"149","block":"1","addr":"840 Altura Vista Ln.","status":6,"statusLabel":"Sold","price":0,"cx":792.3,"cy":1726.6,"d":"M814.025 1665.715v121.726h-43.37v-121.582z"},{"id":108947,"lot":"150","block":"1","addr":"842 Altura Vista Ln.","status":6,"statusLabel":"Sold","price":0,"cx":749.3,"cy":1726.7,"d":"M770.655 1665.859v121.582h-42.648v-121.452z"},{"id":108948,"lot":"151","block":"1","addr":"848 Altura Vista Ln","status":6,"statusLabel":"Sold","price":0,"cx":617.8,"cy":1726.9,"d":"M638.375 1666.279v121.162h-41.201v-121.032z"},{"id":108949,"lot":"152","block":"1","addr":"850 Altura Vista Ln","status":6,"statusLabel":"Sold","price":0,"cx":574.8,"cy":1726.9,"d":"M597.174 1666.409v121.032h-44.816v-120.888z"},{"id":108950,"lot":"153","block":"1","addr":"854 Altura Vista Ln","status":6,"statusLabel":"Sold","price":0,"cx":530.7,"cy":1727,"d":"M552.358 1666.553v120.888h-43.371v-120.758z"},{"id":108951,"lot":"154","block":"1","addr":"858 Altura Vista Ln","status":6,"statusLabel":"Sold","price":0,"cx":486.6,"cy":1727.1,"d":"M508.987 1666.683v120.758h-44.816v-120.613z"},{"id":108952,"lot":"155","block":"1","addr":"862 Altura Vista Ln","status":6,"statusLabel":"Sold","price":0,"cx":439.6,"cy":1727.1,"d":"M464.171 1666.828v120.613h-49.153v-120.454z"},{"id":108953,"lot":"156","block":"1","addr":"866 Altura Vista Ln","status":6,"statusLabel":"Sold","price":0,"cx":393.7,"cy":1727.2,"d":"M415.018 1666.987v120.454h-42.647v-120.324z"},{"id":108954,"lot":"157","block":"1","addr":"870 Altura Vista Ln","status":6,"statusLabel":"Sold","price":0,"cx":352.7,"cy":1727.3,"d":"M372.371 1667.117v120.324h-39.395v-120.194z"}]}</script>
+<script id="overlaydata" type="application/json">{"streets":[{"text":"2075 South Street","x":859,"y":199,"size":22},{"text":"2090 South Street","x":700,"y":428,"size":22},{"text":"2130 South Street","x":695,"y":924,"size":22},{"text":"2150 South Street","x":695,"y":1281,"size":22},{"text":"2180 South Street","x":685,"y":1636,"size":22},{"text":"2200 South Street","x":859,"y":1867,"size":22},{"text":"875 West Street","x":239,"y":1031,"size":22,"rotate":-90},{"text":"800 West Street","x":1484.6,"y":1031,"size":22,"rotate":-90},{"text":"815 West Street","x":1234,"y":650,"size":22,"rotate":-90}],"parkingLines":"M1017.143 1005.88h29.535m-29.535 12.781h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.781h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.781h29.535m-29.535 12.782h29.535m74.654-122.031h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.781h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-133.725 6.994h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-28.089 163.673h29.536m-29.536 12.782h29.536m-29.536 12.781h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.781h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m-29.536 12.782h29.536m71.761-126.372h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.781h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.782h29.535m-29.535 12.781h29.535m-130.832-1.447h29.536m-29.536 12.782h29.536m-475.842-292.634-.114-29.535m12.895 29.486-.113-29.535m12.895 29.486-.113-29.535m12.895 29.486-.114-29.535m12.896 29.486-.114-29.535m12.895 29.485-.113-29.535m12.895 29.486-.113-29.535m12.895 29.486-.114-29.535m12.896 29.486-.114-29.535m12.895 29.486-.113-29.535M700.1 1247.1l-.114-29.535m12.896 29.486-.114-29.535m12.895 29.485-.113-29.535m12.895 29.486-.113-29.535m280.257 335.59h29.536m36.629-692.172v32.469m15.74-32.469v32.469m15.74-32.469v32.469m15.741-32.469v32.469m15.74-32.469v32.469m-64.269-431.261v32.47m15.741-32.47v32.47m15.74-32.47v32.47m15.74-32.47v32.47m15.741-32.47v32.47m193.58-32.47v32.47m15.74-32.47v32.47m15.741-32.47v32.47m-28.475 360.534v32.47m15.741-32.47v32.47m15.74-32.47v32.47M670.236 364.654v32.469m40.255-32.469h-58.444m39.063 0v32.469m-.076 93.486v-32.47m-39.303 32.47h55.609m-37.18 0v-32.47m30.236 1240.118v-32.47m-39.303 32.47h55.609m-37.179 0v-32.47m-7.363-803.259v32.47m40.255-32.47h-58.443m39.062 0v32.47","trees":[[355.3,385.2,1.136],[399.2,385.2,1.136],[443.7,385.2,1.136],[490.3,385.2,1.136],[536.9,385.2,1.136],[581.9,385.2,1.136],[359.6,884.2,1.136],[403.6,884.2,1.136],[448,884.2,1.136],[494.6,884.2,1.136],[541.3,884.2,1.136],[586.2,884.2,1.136],[359.6,1238.9,1.136],[403.6,1238.9,1.136],[448,1238.9,1.136],[494.6,1238.9,1.136],[797.4,1238.9,1.136],[716.7,1174.5,1.136],[577.7,1116.4,1.136],[751.8,1136.3,0.741],[754.1,1161.2,0.741],[701.7,1182.7,0.741],[594.5,1112.8,0.741],[573.7,1138.3,0.741],[1280,774.8,0.741],[1268.1,790.7,0.741],[1283.8,796.5,0.741],[1300.3,741.6,0.741],[1375.5,740.8,0.741],[1321.8,746.2,0.741],[750.8,1185.6,0.741],[754.9,1209.8,0.741],[753.2,1237.1,0.741],[547.1,1237.8,0.741],[543.4,1209.5,0.741],[547.5,1184.3,0.741],[544.1,1157.1,0.741],[546.6,1133.5,0.741],[841.3,1238.9,1.136],[885.8,1238.9,1.136],[932.4,1238.9,1.136],[359.6,1299.8,1.136],[403.6,1298.3,1.136],[448,1298.3,1.136],[499,1298.3,1.136],[540.9,1298.3,1.136],[586.4,1298.3,1.136],[707.9,1298.3,1.136],[751.8,1296.9,1.136],[796.3,1296.9,1.136],[847.2,1296.9,1.136],[889.1,1296.9,1.136],[934.7,1296.9,1.136],[359.6,1597.5,1.136],[403.6,1596.1,1.136],[448,1596.1,1.136],[499,1596.1,1.136],[540.9,1596.1,1.136],[586.4,1596.1,1.136],[359.6,1654.5,1.136],[403.6,1653.1,1.136],[448,1653.1,1.136],[499,1653.1,1.136],[540.9,1653.1,1.136],[586.4,1653.1,1.136],[759.5,1654.5,1.136],[803.5,1653.1,1.136],[847.9,1653.1,1.136],[898.9,1653.1,1.136],[940.8,1653.1,1.136],[986.3,1653.1,1.136],[1104.9,1653.5,1.136],[1148.8,1652.1,1.136],[1193.3,1652.1,1.136],[1244.2,1652.1,1.136],[1286.1,1652.1,1.136],[1331.7,1652.1,1.136],[1208.1,1592.7,1.136],[1259,1592.7,1.136],[1300.9,1592.7,1.136],[1346.5,1592.7,1.136],[1204.8,1296.1,1.136],[1252.8,1296.1,1.136],[1297.6,1296.1,1.136],[1337.4,1296.2,1.136],[1211,1238.2,1.136],[1257.6,1238.2,1.136],[1303.8,1238.2,1.136],[1343.6,1238.2,1.136],[1210.3,939.6,1.136],[1195.3,552.3,1.136],[1194.3,595.2,1.136],[1194.7,640,1.136],[1195.7,684.5,1.136],[1255.3,552.3,1.136],[1254.3,595.2,1.136],[1254.7,640,1.136],[1255.7,684.5,1.136],[1195.7,727.1,1.136],[1272.3,833.1,1.136],[1294.8,864.8,1.136],[1407.4,860,1.136],[1196.1,774.1,1.136],[1256.9,939.6,1.136],[1301.7,938.1,1.136],[1342.9,939.6,1.136],[707.9,1596.1,1.136],[751.8,1594.6,1.136],[796.3,1594.6,1.136],[847.2,1594.6,1.136],[889.1,1594.6,1.136],[934.7,1594.7,1.136],[752,882.7,1.136],[796,882.7,1.136],[840.4,882.7,1.136],[887.1,882.7,1.136],[933.7,882.7,1.136],[978.6,882.7,1.136],[708.5,940.9,1.136],[752.4,940.9,1.136],[796.9,940.9,1.136],[843.5,940.9,1.136],[890.1,939.4,1.136],[935,939.4,1.136],[359.6,942.2,1.136],[403.6,942.2,1.136],[448,942.2,1.136],[494.6,942.2,1.136],[541.3,942.2,1.136],[586.2,942.2,1.136],[754.2,385.2,1.136],[798.1,385.2,1.136],[842.6,385.2,1.136],[889.2,385.2,1.136],[935.8,385.2,1.136],[979.3,385.2,1.136],[1099.3,382.3,1.136],[1143.3,382.3,1.136],[1187.7,382.3,1.136],[1234.3,382.3,1.136],[1281,382.3,1.136],[1324.5,382.3,1.136],[1411.3,386.1,1.136],[1401,460.9,1.136],[1285.7,464.8,1.136],[1175.2,466.3,1.136],[1026,464.4,1.136],[1143.7,495.9,1.136],[1102,495.9,1.136],[1178.4,846.2,1.136],[984.9,962.7,1.136],[1133.2,974.2,1.136],[1138.7,1207.3,1.136],[1156.5,1025.8,1.136],[1153.8,1147.8,1.136],[985.8,1218.1,1.136],[989.9,1315.6,1.136],[986,1375.4,1.136],[987,1505.9,1.136],[1137,1563.1,1.136],[1132.2,1328.9,1.136],[1152,1384.1,1.136],[1152.1,1500.5,1.136],[988,1571.8,1.136],[1057.7,496.3,1.136],[1323,497.4,1.136],[1370.2,496.6,1.136],[748.4,446,1.136],[792.3,446,1.136],[836.8,446,1.136],[883.4,446,1.136],[930,444.5,1.136],[973.5,444.5,1.136],[355.3,446.5,1.136],[399.2,446.5,1.136],[443.7,446.5,1.136],[490.3,446.5,1.136],[536.9,446.5,1.136],[581.9,446.5,1.136],[294.1,361.9,1.446],[291.3,470.7,1.446],[291.4,537.9,1.446],[292.8,614.5,1.446],[561.4,616.3,1.446],[693.9,692.6,1.446],[844.2,616.8,1.446],[985.2,695,1.446],[340.6,567.9,1.446],[296.8,707,1.446],[427.1,566.1,1.446],[347.7,750.3,1.446],[445.5,752.2,1.446],[545.4,751.4,1.446],[618.8,750.3,1.446],[674.7,807.3,1.446],[630,980.6,1.446],[658.4,1039.6,1.446],[295.5,977,1.446],[296.5,1076.1,1.446],[296.8,1193.1,1.446],[298.5,1341.9,1.446],[297.1,1429.7,1.446],[298.6,1549.4,1.446],[300.4,1682.9,1.446],[401.4,1788.4,1.446],[349.7,1429.4,1.446],[395.1,1463.7,1.446],[434.1,1427.2,1.446],[501.2,1460.6,1.446],[547.6,1424.8,1.446],[597,1460.3,1.446],[697.9,1425.8,1.446],[742.7,1463.2,1.446],[798.1,1424,1.446],[850.4,1463.8,1.446],[902.7,1428.5,1.446],[937.7,1462,1.446],[982.2,1428.2,1.446],[1193.6,1459.2,1.446],[1234.6,1429.5,1.446],[1306.9,1458.7,1.446],[1349.4,1429.6,1.446],[495.3,1788.4,1.446],[592.5,1788.4,1.446],[801,1781.8,1.446],[891.7,1784.3,1.446],[980,1782.8,1.446],[1147.3,1788.4,1.446],[1240.6,1788.4,1.446],[1328.8,1788.4,1.446],[301.6,1772.8,1.446],[1398.2,1672.9,1.446],[1398.3,1765.9,1.446],[1403.2,1555.1,1.446],[1408.5,1426.4,1.446],[1401.7,1324.4,1.446],[663,1331,1.446],[633.2,1429.2,1.446],[1055.1,1682,1.446],[1033.1,1768.6,1.446],[633.7,1549.5,1.446],[687.2,1709.6,1.446],[669.5,1762.1,1.446],[939.7,1105.6,1.446],[841.7,1105.3,1.446],[749.3,1107.3,1.446],[698.4,1073.1,1.446],[783.4,1075.9,1.446],[894,1072.8,1.446],[974.8,1071.3,1.446],[1194.1,1072.6,1.446],[1253.9,1108,1.446],[1295.5,1072.3,1.446],[1403,992,1.446],[1406.1,1102.1,1.446],[1352.8,1104.3,1.446],[1404.2,1198.7,1.446],[512.5,1105.5,1.446],[420,1104.9,1.446],[347.8,1105.7,1.446],[393.3,1073.1,1.446],[493.7,1071.3,1.446],[588.4,1071.2,1.446],[580.6,1168.9,1.446],[707.9,1112.9,1.446],[741.4,752.5,1.446],[835.2,750.7,1.446],[942.1,750.7,1.446],[486.3,566.1,1.446],[624.2,542.2,1.446],[661.3,503.4,1.446],[776,566.9,1.446],[880.6,566.7,1.446],[933.6,567.6,1.446],[1017.4,565.2,1.446],[1023.3,751.7,1.446],[1062.4,585.2,1.446],[1059,683.7,1.446],[1057.7,753.6,1.446],[1391.3,592.5,1.446],[1388.1,535.5,1.446],[1389.3,697.8,1.446],[1268.6,741.6,1.446],[1343.2,741.6,1.446],[1405,750.4,1.446],[1399.5,809.1,1.446],[1318.1,812.4,1.446],[295.5,770.3,1.446],[295.4,846.2,1.446],[294.6,308.5,1.446],[295.6,255,1.446],[339.9,244.4,1.446],[438.8,245.6,1.446],[544.7,246.5,1.446],[624,247.6,1.446],[669.2,267,1.446],[734.7,244.5,1.446],[840.4,242.6,1.446],[937.5,247.8,1.446],[1017.8,251.6,1.446],[1023.7,294,1.446],[1085.2,246.8,1.446],[1185.8,246.4,1.446],[1288.6,245.6,1.446],[1374.6,253.1,1.446],[1390.4,293.1,1.446],[1390.9,352.3,1.446],[1046.6,351.8,1.446],[679.1,309.4,1.446]]}</script>
+<script>
+"use strict";
+/* viewport guard: ensures correct mobile scaling even if this markup is embedded (e.g. hosted artifact) */
+(function(){if(!document.querySelector('meta[name="viewport"]')){var m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1,viewport-fit=cover';document.head.appendChild(m);}})();
+const DATA = JSON.parse(document.getElementById('lotdata').textContent);
+const OVERLAY = JSON.parse(document.getElementById('overlaydata').textContent);
+const LOTS = DATA.lots;
+const BASEMAP = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1650 2000"><defs><symbol id="Tree2" viewBox="0 0 18.905 20.2"><circle cx="9.151" cy="11.422" r="8.778" style="opacity: 0.15"></circle><path d="M15.859 9.536a7.35 7.35 0 0 1-7.35 7.349 7.35 7.35 0 1 1 7.35-7.35" style="fill: rgb(62, 133, 35)"></path><path d="M.08 7.316c-.054 4.435-.1 4.583.094 5.103.183.491 1.387 2.061 1.812 2.463 1.979 1.874 1.061 1.165 1.807 2.065 1.645 1.985 5.742 1.553 7.413.904 1.108-.43 4.096-2.226 4.301-3.735.069-.505-.038-.477.2-1.106.383-1.007.577-2.375.663-2.605.089-.24.266-.419.216-.703-.423-2.402-2.752 6.886-9.51 5.252-1.288-.31-1.623-.577-2.383-1.402C.684 9.205 3.16 8.184 3.459 6.672c.055-.279.041-.568.111-.842.176-.687 1.384-1.9 2.005-2.234.83-.445 2.832-.615 3.767-.665 1.61-.084 1.634.5 2.478 1.253.687.612 1.669.893 2.189 1.652.195.284.317.628.58.852.319.274.843.382.939.791.03.128.008.264.035.392.121.575 1.223.687 1.337.443.144-.304-.65-.834-.78-1.301-.069-.246-.013-.51-.046-.763-.107-.825-1.109-1.387-1.043-2.216.03-.383.149-.49-.315-.933C12.66 1.14 12.336 1.44 9.778.96 8.972.81 8.174.552 7.355.577c-1.84.057-3.299 1.47-4.86 2.444C.903 4.014 1.358 4.176.523 5.458c-.37.57-.436 1.193-.444 1.858" style="fill: rgb(131, 183, 108)"></path><path d="M16.81 12.678c1.169-4.92-2.398-9.71-7.454-9.99m9.349 10.841-9.177-3.132M3.73 16.896c3.767 3.245 9.564 2.332 12.141-1.937M7.078 2.326c-6.168.91-9.004 8.212-5.064 13.047m7.514-4.975 8.231 4.953M1.661 17.827l7.794-7.43m0 0L.642 16.588M7.124.2l2.331 10.197" style="stroke-linejoin: round; stroke-linecap: round; fill: none; stroke: rgb(59, 60, 61); stroke-width: 0.4px"></path></symbol><style>.cls-1,.cls-2,.cls-4,.cls-6,.cls-7,.greens,.roads{stroke-miterlimit:10}.cls-2,.greens{fill:#61a746}.cls-2,.greens,.pw-lots,.roads{stroke:#6d6e71}.greens,.pw-lots{stroke-width:1.5px}.cls-1,.cls-10,.cls-11,.cls-4,.cls-7{stroke:#000}.cls-10,.cls-11,.cls-14,.cls-15,.pw-lots{stroke-linejoin:round}.cls-10,.cls-11,.cls-14,.pw-lots{stroke-linecap:round}.cls-10,.cls-14{fill:#a67c52}.cls-10,.cls-11{stroke-width:.5px}.cls-1,.cls-4,.cls-6,.cls-7{fill:none}.cls-14{stroke:#8c6239}.cls-16,.roads{fill:#fff}.cls-17{fill:#c69c6d}.pw-lots{fill:#e3e1d3}.cls-2{stroke-width:1.4457px}.cls-14{stroke-width:.2615px}.cls-15{fill:#0071bc;stroke:#004c6d;stroke-width:.4359px}.cls-4{stroke-dasharray:3.0562 10.1874}.cls-4,.cls-7{stroke-width:3px}.cls-11{fill:#8c6746}.cls-6{stroke:#b3b3b3}</style></defs><g id="pw-bottom"><g id="pw-greens"><path class="greens" d="M766.32 1129.89v121.48l-13.88.05c-.26-.89-.4-1.83-.4-2.81v-118.72zm-206.93 88.22v31.32c0 .95-.13 1.87-.38 2.74l-14.6.05v-122.33h14.98z"></path><path class="greens" d="M1041.23 1217.12c2.73 0 4.94 2.23 4.94 4.96a28.2 28.2 0 0 1-8.3 19.99 28.2 28.2 0 0 1-19.86 8.35h-.12l-33.33.13v-120.66H752.04v-19.94l265.1-1.02v108.19zm-299.62-107.13v94.88l-171.89.66v-94.88zm-182.22.7v19.2H326.83v123.17l-35.98.13h-.78l-.53-141.46zm487.29-132.02v.06c0 2.46-1.01 4.68-2.62 6.29a8.88 8.88 0 0 1-6.29 2.6h-20.63v110.86l-727.64 2.8-.54-145.19.69-.01 40.07-.21v120.66h305.4V954.34l42.29-.2v122.39h306.6V952.59l36.27-.19h.26c14.44.08 26.14 11.81 26.14 26.27Z"></path><path class="cls-2" d="M1205.63 869.754v.26c-.13 12.216-9.99 22.134-22.22 22.307h-.304c-5.826-.028-10.553-4.77-10.553-10.61v-20.876h-113.89v32.108l-32.846.159V772.576H721.502v122.058l-86.74.434V772.576h-305.4v124.025l-40.623.216L287.09 459.5l36.2-.159v121.683h307.857V457.982l83.85-.361v123.403h305.037V456.276l36.272-.159v38.166h114.44v-29.969a8.727 8.727 0 0 1 8.703-8.731h.13c13.806 0 25.039 11.088 25.241 24.865.015.116.015.232.015.347l.072 39.51h-121.986V826.79h122.608z"></path><path class="greens" d="m1443.617 1796.115-20.962 20.962-1109.557 5.06-20.962-20.962-.506-133.798 41.346-.13v120.194h305.4v-121.162l89.631-.29v121.452h306.122v-122.42l43.37-.145v122.565h304.677v-123.533l23.593-.073-.188-59.272-12.562.043v-119.73H1174.36V1605.3l-25.314.072h-.13c-19.589 0-35.477-15.859-35.535-35.433v-.188l.03-12.968v-.043c.043-6.332 5.19-11.45 11.521-11.45h23.767v-173.756h-25.068c-5.392 0-9.758-4.351-9.816-9.729v-.101l.043-19.633v-.144c.116-18.013 14.688-32.6 32.702-32.73h.115l26.6-.101v124.154h218.298v-124.993l16.018-.058-.232-59.272-12.172.043v-119.08h-217.574v119.918l-25.401.102h-.231c-20.803-.058-37.69-16.842-37.848-37.631v-.376l.029-13.604v-.16c.101-5.102 4.28-9.208 9.397-9.208h27.309v-172.397h-26.586c-5.35 0-9.7-4.337-9.715-9.671v-.058l.029-14.298v-.087c.086-22.379 18.2-40.537 40.58-40.696h.087l20.904-.1v124.906h216.851V950.539l27.613-.145-.29-59.272-12.562.058h-.058c-5.71 0-10.366-4.641-10.366-10.366v-25.111h-78.066v25.053c0 6-4.843 10.886-10.843 10.93h-.029l-19.863.1h-.188c-12.94-.043-23.449-10.524-23.463-23.492l-.275-129.691h123.648V520.667H1264.18l-.073-38.527v-.058c0-14.861 12-26.933 26.875-26.99l16.467-.073h.058c4.987 0 9.035 4.048 9.035 9.05v30.215h80.09v-28.697c0-6.014 4.844-10.93 10.843-11.016h.116l11.19-.043-.26-59.273-44.296.188v-120.18h-305.76v121.524l-41.925.188V275.264H720.056V398.32l-88.909.39V275.264h-305.76v124.79l-38.528.174-.506-135.807 20.963-20.962 1105.942-1.446 20.962 20.963z"></path><path class="cls-2" d="M1019.022 1343.054v228.62h18.49c4.352 0 7.88 3.527 7.908 7.864v.867c-.145 13.995-11.508 25.314-25.53 25.387h-.044l-34.87.115v-121.032H680.3v122l-42.648.13v-122.13H332.615v123.1l-41.202.13-1.113-295.641 40.87-.16v120.946h306.482v-122.116l41.925-.16v122.276h305.4v-123.432l34.247-.13h.101c14.703 0 26.6 11.898 26.6 26.6v.405c0 3.513-2.862 6.361-6.375 6.361z"></path></g><g id="pw-walks"><path class="roads" d="m1405.61 1611.834-231.236.694-25.458.073c-23.507 0-42.69-19.127-42.763-42.662l.029-13.243c.072-10.278 8.486-18.635 18.75-18.635h23.767v7.229h-23.767c-6.332 0-11.478 5.118-11.522 11.45v.043l-.028 12.968v.188c.057 19.574 15.945 35.433 35.534 35.433h.13l25.314-.072 218.659-.694 12.562-.044zm1.98-303.635-16.017.058-218.297.838-26.6.101h-.117c-18.013.13-32.585 14.718-32.7 32.73v.145l-.044 19.633v.1c.058 5.379 4.424 9.73 9.816 9.73h25.068v7.228h-25.068c-9.296 0-16.943-7.575-17.045-16.885l.044-19.994c.144-21.858 18.027-39.756 40.016-39.915l260.916-.94zm-.202-51.986-255.422.925c-24.663-.073-44.873-20.167-45.061-44.86l.029-14.283c.173-8.978 7.633-16.293 16.625-16.293h27.309v7.229h-27.31c-5.117 0-9.295 4.105-9.396 9.209v.159l-.029 13.604v.376c.159 20.788 17.044 37.573 37.848 37.63h.231l25.4-.1 217.575-.84 12.172-.043zm13.242-305.819-27.612.145-127.956.636-59.273.303-29.622.145-20.904.1h-.087c-22.38.16-40.494 18.318-40.58 40.697v.087l-.03 14.297v.058c.015 5.335 4.367 9.672 9.716 9.672h26.586v7.228h-26.586c-9.31 0-16.915-7.575-16.944-16.972l.03-14.399c.1-26.225 21.525-47.707 47.866-47.895l50.512-.246 59.287-.304 148.34-.737-.23-44.83-5.422.029c-9.7 0-17.594-7.894-17.594-17.594v-25.112h7.228v25.112c0 5.725 4.655 10.365 10.366 10.365h.058l12.563-.058zm-354.739-89.559v39.307l-40.031.188-736.297 3.701-8.024.174-1.706-451.933h7.258l344.027-1.518 83.849-.361 348.567-1.533v45.423h-7.228v-38.166l-36.272.159-305.038 1.345-83.849.361-307.857 1.359-35.679.159h-.52l1.648 437.317.665-.014 39.958-.202 305.399-1.533 86.741-.434 304.315-1.532 32.845-.159v-32.108zm146.967 9.252c-.173 16.018-13.33 29.231-29.448 29.463h-.333c-9.787-.044-17.753-8.053-17.753-17.84v-20.875h7.229v20.875c0 5.84 4.727 10.582 10.553 10.611h.304c12.23-.173 22.09-10.09 22.22-22.306v-.26l-.101-42.966-.622-306.484-.072-39.51c0-.116 0-.231-.015-.347-.202-13.777-11.435-24.866-25.241-24.866h-.13a8.727 8.727 0 0 0-8.703 8.732v29.97h-7.229v-29.97c0-8.775 7.142-15.931 15.903-15.96h.159c17.565 0 32.08 14.226 32.47 31.762.014.216.014.448.014.665l.072 39.51.622 306.483z"></path><path class="roads" d="M1326.517 855.702v25.054c0 9.946-8.081 18.085-18.056 18.158l-20.124.1c-16.886-.057-30.648-13.834-30.663-30.705l-.275-129.692-.448-217.936-.072-38.6c0-18.793 15.28-34.146 34.075-34.218l16.552-.073c8.964 0 16.264 7.301 16.264 16.279v30.214h-7.228V464.07c0-5.002-4.048-9.05-9.036-9.05h-.057l-16.467.072c-14.876.058-26.875 12.13-26.875 26.99v.059l.073 38.527.448 217.936.274 129.691c.015 12.968 10.525 23.449 23.464 23.492h.188l19.863-.1h.03c5.999-.044 10.842-4.93 10.842-10.93v-25.054zm92.263-401.175-11.19.044h-.115c-6 .086-10.842 5.002-10.842 11.016v28.696h-7.229v-28.696c0-9.918 8.067-18.1 17.97-18.245l11.377-.014zM1053.4 1222.09c-.01 9.49-3.72 18.39-10.39 25.09-6.65 6.68-15.52 10.39-25.09 10.46l-255.84.97c-4.56.02-8.42-3.02-9.64-7.19l13.88-.05 218.24-.82 33.33-.13h.12c7.76-.06 14.79-3.24 19.86-8.35a28.2 28.2 0 0 0 8.3-19.99c0-2.73-2.21-4.96-4.94-4.96h-24.09v-7.23h24.09c6.71 0 12.17 5.47 12.17 12.2Zm.51-243.36c0 4.29-1.68 8.34-4.73 11.41-3.05 3.03-7.1 4.71-11.41 4.71h-20.63v-7.23h20.63c2.46 0 4.69-1 6.29-2.6a8.87 8.87 0 0 0 2.62-6.29v-.06c0-14.46-11.7-26.19-26.14-26.27h-.26l-36.27.19-306.6 1.55-42.29.2-305.4 1.53-40.07.21-.69.01.54 145.19.04 10.45.53 141.46h.78l35.98-.13 217.58-.84 14.6-.05c-1.19 4.18-5.03 7.24-9.58 7.26l-222.57.86-36.01.13h-7.98l-1.17-311.41 7.91-.16 345.48-1.74 42.29-.2 342.86-1.73h.33c18.39.08 33.34 15.12 33.34 33.55Z"></path><path class="roads" d="M1313.508 798.863v44.334h124.269l.072 11.858-40.494.647h-91.877l-10.563-19.987v-9.259h-30.101l-.026-12.593h34.276v-15zM287.912 672.833h68.754v9h-68.754zm81.413-431.689h10.483v37.629h-10.483zm45.322 0h10.483v37.629h-10.483zm72.648 0h10.483v37.629h-10.483zm42.931 0h10.483v37.629h-10.483zm47.289 0h10.483v37.629h-10.483zm40.254 0h10.483v37.629h-10.483zm106.157 0h10.483v37.629h-10.483zm40.225 0h10.483v37.629h-10.483zm44.799 0h10.483v37.629H808.95zm73.882 0h10.483v37.629h-10.483zm42.45 0h10.483v37.629h-10.483zm44.388 0h10.483v37.629H969.67zm102.82 0h10.483v37.629h-10.483zm38.752 0h10.483v37.629h-10.483zm46.213 0h10.483v37.629h-10.483zm51.102 254.948v10.483h-155.293v-10.483zm21.03-254.948h10.483v37.629h-10.483zm45.209 0h10.483v37.629h-10.483zm44.31 0h10.483v37.629h-10.483zm42.272 0h10.483v37.629h-10.483zm-346.611 0h10.483v37.629h-10.483zm28.994 0h10.483v158.265h-10.483zm-402.514 1.871h10.483v155.304h-10.483zm0 214.967h10.483v130.827h-10.483zm1.975 304.988h10.483V895h-10.483zm9.733 191.371h10.483v145.52h-10.483zM327.679 241.144h10.483v37.629h-10.483zm.71 335.956h10.483v16.138h-10.483zm4.091 183.753h10.483v16.138H332.48zm0 313.438h10.483v30.245H332.48zm40.875 0h10.483v30.245h-10.483zm47.711-1.001h10.483v30.245h-10.483zm41.009 0h10.483v30.245h-10.483zm71.571 0h10.483v30.245h-10.483zm0 35.857h10.483v30.245h-10.483zm-45.663 0h10.483v30.245h-10.483zm-43.551 0h10.483v30.245h-10.483zm-71.167 0h10.483v30.245h-10.483zm-40.737 0h10.483v30.245h-10.483zm247.87-35.857h10.483v30.245h-10.483zm42.048 0h10.483v30.245h-10.483zm59.214 0h10.483v30.245H681.66zm42.405 0h10.483v30.245h-10.483zm41.288 0h10.483v30.245h-10.483zm45.055 0h10.483v30.245h-10.483zm72.994 0h10.483v30.245h-10.483zm0 34.202h10.483v30.245h-10.483zm-72.509 0h10.483v30.245h-10.483zm-45.28 0h10.483v30.245h-10.483zm414.292-37.204h10.483v30.245h-10.483zm.259 34.202h10.483v30.245h-10.483zm43.023-34.202h10.483v30.245h-10.483zm43.309 0h10.483v30.245h-10.483zm-43.05 34.202h10.483v30.245h-10.483zm70.326 0h10.483v30.245h-10.483zm45.629-34.202h10.483v30.245h-10.483zm.259 34.202h10.483v30.245h-10.483zm41.326-34.202h10.483v30.245h-10.483zm.259 34.202h10.483v30.245h-10.483zm-454.423 3.002h10.483v30.245h-10.483zm43.193 0h10.483v30.245h-10.483zm-42.478-35.202h10.483v30.245h-10.483zm41.675 0h10.483v30.245h-10.483zM374.598 760.853h10.483v16.138h-10.483zm43.438 0h10.483v16.138h-10.483zm71.741 0h10.483v16.138h-10.483zm88.143 0h10.483v16.138H577.92zm41.836 0h10.483v16.138h-10.483zm103.023 0h10.483v16.138h-10.483zm44.035 0h10.483v16.138h-10.483zm42.272 0h10.483v16.138h-10.483zm72.574-1.001h10.483v16.138H881.66zm43.562 0h10.483v16.138h-10.483zm46.06-1h10.483v16.138h-10.483zm37.924 0h10.483v16.138h-10.483zm-477.234 2.001h10.483v16.138h-10.483zM368.002 577.1h10.483v16.138h-10.483zm45.348 0h10.483v16.138H413.35zm45.079 0h10.483v16.138h-10.483zm70.697 0h10.483v16.138h-10.483zm45.086 0h10.483v16.138h-10.483zm41.48 0h10.483v16.138h-10.483zm105.077 0h10.483v16.138h-10.483zm39.562 0h10.483v16.138h-10.483zm44.459-2.002h10.483v16.138H804.79zm47.225 0h10.483v16.138h-10.483zm70.313 0h10.483v16.138h-10.483zm45.068 0h10.483v16.138h-10.483zm40.623 0h10.483v16.138h-10.483zm430.418-80.671v10.483h-122.198v-10.483zm-.001 30.43v10.483h-53.22v-10.483zm-351.455.552v10.483h-33.534v-10.483zm0 40.706v10.483h-33.534v-10.483zm0 46.144v10.483h-33.534v-10.483zm0 42.006v10.483h-33.534v-10.483zm0 74.19v10.483h-33.534v-10.483zm0 86.236v10.483h-33.534v-10.483zm122.338 32.689v10.483h-155.872V847.38zm-122.338-73.258v10.483h-33.534v-10.483zm351.455-207.47v10.483h-53.22v-10.483zm0 73.615v10.483h-53.22v-10.483zm.001 44.472v10.483h-53.22v-10.483zm-.001 42.38v10.483h-53.22v-10.483zM333.861 1431.392h10.483v30.245h-10.483z"></path><path class="roads" d="M1444.714 1096.739v10.483h-293.847v-10.483zM333.861 1460.714h10.483v30.245h-10.483zm43.094-29.322h10.483v30.245h-10.483z"></path><path class="roads" d="M376.955 1461.492h10.483v30.245h-10.483zm43.434-30.1h10.483v30.245h-10.483z"></path><path class="roads" d="M420.389 1461.492h10.483v30.245h-10.483zm116.608-30.1h10.483v30.245h-10.483z"></path><path class="roads" d="M536.997 1461.492h10.483v30.245h-10.483zm46.091-30.1h10.483v30.245h-10.483z"></path><path class="roads" d="M583.088 1461.492h10.483v30.245h-10.483zm41.613-30.1h10.483v30.245h-10.483z"></path><path class="roads" d="M624.701 1461.492h10.483v30.245h-10.483zm57.1-30.1h10.483v30.245h-10.483z"></path><path class="roads" d="M681.801 1461.492h10.483v30.245h-10.483zm42.755-30.1h10.483v30.245h-10.483z"></path><path class="roads" d="M724.556 1461.492h10.483v30.245h-10.483zm43.262-30.1h10.483v30.245h-10.483zm44.534 0h10.483v30.245h-10.483z"></path><path class="roads" d="M767.818 1461.492h10.483v30.245h-10.483zm117.829-30.1h10.483v30.245h-10.483z"></path><path class="roads" d="M885.647 1461.492h10.483v30.245h-10.483zm44.482-30.1h10.483v30.245h-10.483z"></path><path class="roads" d="M930.129 1461.492h10.483v30.245h-10.483zm288.737-30.1h10.483v30.245h-10.483zm43.838 0h10.483v30.245h-10.483z"></path><path class="roads" d="M1218.866 1461.492h10.483v30.245h-10.483zm72.874 0h10.483v30.245h-10.483zm42.765-31.101h10.483v30.245h-10.483z"></path><path class="roads" d="M1334.505 1460.492h10.483v30.245h-10.483zm44.86-30.101h10.483v30.245h-10.483z"></path><path class="roads" d="M1379.365 1460.492h10.483v30.245h-10.483zm-202.7-29.1h10.483v30.245h-10.483z"></path><path class="roads" d="M1176.665 1461.492h10.483v30.245h-10.483zm-205.214-30.1h10.483v30.245h-10.483z"></path><path class="roads" d="M971.451 1461.492h10.483v30.245h-10.483zm-129.446 0h10.483v30.245h-10.483zm-378.937-30.1h10.483v30.245h-10.483zm32.876 30.1h10.483v30.245h-10.483zm507.221-155.395h10.483v302.247h-10.483zm-347.85 0h10.483v302.247h-10.483zM336.403 1787.92h10.483v36.444h-10.483zm41.42 0h10.483v36.444h-10.483zm43.524 0h10.483v36.444h-10.483zm44.821 0h10.483v36.444h-10.483zm70.359 0h10.483v36.444h-10.483zm47.55 0h10.483v36.444h-10.483zm41.237 0h10.483v36.444h-10.483zm107.996 0h10.483v36.444H733.31zm39.58 0h10.483v36.444H772.89zm45.524 0h10.483v36.444h-10.483zm43.191 0h10.483v36.444h-10.483zm71.877 0h10.483v36.444h-10.483zm47.298 0h10.483v36.444H980.78zm40.636 0h10.483v36.444h-10.483zm59.987 0h10.483v36.444h-10.483zm40.051 0h10.483v36.444h-10.483zm46.351 0h10.483v36.444h-10.483zm42.726 0h10.483v36.444h-10.483zm71.122-1h10.483v36.444h-10.483zm47.013 0h10.483v36.444h-10.483zm42.107 0h10.483v36.444h-10.483zm-319.777-122.174h10.483v159.618h-10.483zm-400.986-1.587h10.483v161.206H650.01z"></path><path class="roads" d="M1045.926 1336.693v-.405c0-14.702-11.898-26.6-26.6-26.6h-.102l-34.248.13-305.399 1.157-41.925.159-306.483 1.17-40.074.16h-.795l1.113 295.64h.896l40.306-.13 305.037-.968 42.648-.13 304.676-.969 34.87-.115h.043c14.023-.073 25.387-11.392 25.531-25.387v-.867c-.029-4.337-3.556-7.864-7.908-7.864h-18.49v-7.229h18.49c8.298 0 15.079 6.751 15.136 15.093v.94c-.187 17.854-14.861 32.455-32.773 32.542l-34.87.116-692.696 2.197h-8.095l-1.171-310.098h7.257l40.84-.158 306.484-1.171 381.702-1.446c18.649 0 33.828 15.18 33.828 33.829v.404c0 7.489-6.1 13.59-13.603 13.59h-20.53v-7.229h20.53c3.513 0 6.375-2.848 6.375-6.36Z"></path><path class="roads" d="M1003.165 1454.227v10.483h-715.77v-10.483zm441.549 0v10.483h-289.595v-10.483z"></path><path class="roads" d="m310.12 1829.38-25.198-25.198-.549-144.033h7.257l742.47-2.356 43.371-.145 328.269-.983.029 7.17-23.593.073-304.676.968-43.371.145-306.122.968-89.632.29-305.399.968-40.435.13h-.911l.506 133.798 20.962 20.962 1109.557-5.06 20.962-20.962-9.397-1533.14-20.962-20.962-1105.942 1.445-20.963 20.963.506 135.807h.521l38.007-.174 305.76-1.344 88.909-.391 306.484-1.344 41.924-.188 305.761-1.345 44.295-.188.029 7.287-44.295.13-1048.839 4.612-38.035.173h-7.72l-.55-146.013 25.213-25.213 1111.928-1.446 25.183 25.184 9.426 1539.125-25.198 25.198-1115.542 5.089"></path><path class="roads" d="M1149.002 1371.371h10.483v174.172h-10.483zm-91.537-478.419-1.779-436.831-9 .037.533 130.989-759.637 3.15.037 9 759.637-3.15.636 156.224-759.687 3.041.036 9 759.688-3.041.536 131.618zm-40.325 205.528v10.45l-265.1 1.02v107.41l-192.65.75v-107.42l-269.85 1.04-.04-10.45zm-275.53 106.39v-94.88l-171.89.66v94.88z"></path><path class="roads" d="M1001.164 952.4h10.483v298.15h-10.483z"></path></g><g id="pw-roads"><path class="roads" d="m1620.29 1905.35-.35-82.08-87.71.53-9.46-1589.15 97.22-.17-.21-82.02-97.5.32-.59-99.89-81.52.5.61 99.59-1162.07 2.93-.36-97.11-83.45.31.46 97.01-106.76.27.21 80.12 106.92-.14 7.47 1593.5-102.17.46.35 81.76 102.2-.45.42 58.37 81.67.01-.34-58.73 1166.19-5.07.57 64.27 81.19-.49-.56-64.14zM279.83 452.27h7.26l344.03-1.52 13.21-.06c4.11-.02 7.44 3.34 7.4 7.45v47.65h55.61v-48.06a7.34 7.34 0 0 1 7.34-7.34h.29l348.56-1.53v45.42h99.99v-30.03c0-8.781 7.119-15.9 15.9-15.9h.16c17.56 0 32.08 14.23 32.47 31.77.01.21.01.44.01.66l.08 39.51.62 306.48.1 43.32c-.18 16.01-13.33 29.23-29.45 29.46h-.33c-9.79-.04-17.76-8.05-17.76-17.84v-20.88h-99.43v39.31l-40.03.19-304.491 1.528a8.357 8.357 0 0 1-8.399-8.357V848.21H653.7v45.675a8.357 8.357 0 0 1-8.315 8.357L289.56 904.03l-8.02.17zm1.87 496.74 7.91-.16 345.48-1.74 42.29-.2 342.86-1.73h.33c18.39.08 33.34 15.12 33.34 33.55 0 4.29-1.68 8.34-4.73 11.41-3.05 3.03-7.1 4.71-11.41 4.71h-20.63v215.04h24.09c6.71 0 12.17 5.47 12.17 12.2-.01 9.49-3.72 18.39-10.39 25.09-6.65 6.68-15.52 10.39-25.09 10.46l-251.57.96-4.27.01c-4.56.02-8.42-3.02-9.64-7.19a10 10 0 0 1-.4-2.81v-31.25l-192.65.75v31.32c0 .95-.13 1.87-.38 2.74-1.19 4.18-5.03 7.24-9.58 7.26l-222.57.86-36.01.13h-7.98zm1.34 356.23h7.26l40.84-.16 306.48-1.17 381.71-1.45c18.64 0 33.82 15.18 33.82 33.83v.4c0 7.49-6.1 13.59-13.6 13.59h-20.53v214.17h18.49c8.3 0 15.08 6.75 15.14 15.09v.94c-.19 17.85-14.86 32.45-32.78 32.54l-34.86.12-692.7 2.19h-8.1zm1142.62 519.05-1115.54 5.09-25.2-25.2-.55-144.03h7.26l359.13-1.14c5.37-.02 9.73 4.33 9.73 9.7v44.055h56.17v-44.295c0-5.35 4.32-9.68 9.66-9.7l307.78-.98 43.37-.14 328.27-.99-.13-44.83-231.24.7-25.45.07c-23.51 0-42.69-19.13-42.77-42.66l.03-13.24c.07-10.28 8.49-18.64 18.75-18.64h23.77v-159.3h-25.07c-9.29 0-16.94-7.57-17.04-16.88l.04-20c.14-21.86 18.03-39.75 40.02-39.91l260.91-.94-.17-44.82-255.42.93c-24.67-.07-44.88-20.17-45.07-44.86l.03-14.28c.18-8.98 7.64-16.3 16.63-16.3h27.31v-157.94h-26.59c-9.31 0-16.91-7.57-16.94-16.97l.03-14.4c.1-26.22 21.52-47.71 47.86-47.89l50.52-.25 59.28-.3 148.34-.74-.23-44.83-5.42.03c-9.7 0-17.59-7.9-17.59-17.6V855.7h-63.61v25.06c0 9.94-8.08 18.08-18.06 18.15l-20.12.1c-16.89-.05-30.65-13.83-30.67-30.7l-.27-129.69-.45-217.94-.07-38.6c0-18.79 15.28-34.15 34.07-34.22l16.56-.07c8.96 0 16.26 7.3 16.26 16.28v30.21h65.63v-28.69c0-9.92 8.07-18.1 17.97-18.25l11.38-.01-.2-44.79-44.3.13-655.04 2.88c-4.87.02-8.83-3.92-8.83-8.79v-45.52l-58.65-.08v45.94c0 4.84-3.91 8.77-8.75 8.79l-317.56 1.39-38.04.18h-7.72l-.55-146.02 25.21-25.21 1111.93-1.45 25.18 25.19 9.43 1539.12z"></path></g><g id="pw-misc"><path d="M696.248 1163.956c.577.251.958-1.141-3.505 9.398l-.384-.157a12.24 12.24 0 0 1-8.892 4.655c-2.117 5.216-7.463 8.167-12.692 7.567a12.3 12.3 0 0 1-9.8-.54 12.3 12.3 0 0 1-3.817-2.005c-1.06 7.412-5.393 11.087-10.74 11.769-.075.567 1.213.603-9.974-.977l.053-.4c-5.074-2.163-8.073-7.446-7.306-12.903l1.046-7.55a14.21 14.21 0 0 1-6.172-16.424c-1.054-1.616-2.859-4.948-3.225-7.671-.333-1-11.52-5.772-8.108-17.174l-.714-.558c8.36-10.747 6.983-9.57 7.985-8.787 4.927-2.925 11.028-2.291 14.96.854 5.648 4.445 5.688 3.787 8.944 7.741 2.96-.584 9.173.525 10.566.977 2.932-2.05 4.39-1.945 13.163-3.052 7.614-.692 13.011 4.727 13.495 11.037 2.316 1.76 6.569 7.206 7.201 11.072 5.953 2.38 8.63 7.807 7.916 13.128" style="fill: rgb(227, 225, 211)"></path><path class="cls-17" d="M662.266 1142.895c.14-.175.087-.401-.104-.541a.27.27 0 0 1-.105-.14v-.034c.017-.14.157-.245.331-.245.192 0 .384-.017.593-.034.331-.053.68-.105 1.029-.122.314-.018.645-.07.941-.14.21-.052.401-.07.61-.07.262 0 .54-.017.802-.07a9 9 0 0 1 1.378-.209.9.9 0 0 0 .366-.07c.087-.017.174-.034.279-.034.017 0 .052 0 .07.017.14.018.226.14.174.262-.017.035-.035.052-.07.087-.035.07-.07.122-.087.174-.017.07-.035.14-.017.192a.33.33 0 0 0 .14.262l.121.122c.035.052.052.122.018.174a.4.4 0 0 1-.088.14c-.035.052-.07.122-.104.191a2 2 0 0 0-.227.524c-.017.052-.017.104-.017.139.017.07.035.122.087.174a.65.65 0 0 0 .192.192c.07.053.14.105.191.175s.07.157.035.226c-.017.07-.052.122-.087.175a2 2 0 0 0-.192.505c-.017.053-.017.088 0 .122a.46.46 0 0 0 .21.314c.034.018.052.035.07.052a.14.14 0 0 1 .052.157c-.053.088-.088.157-.157.227a.6.6 0 0 0-.088.174c-.017.053-.034.088-.07.14s-.052.122-.034.192c0 .052.035.122.087.174.07.052.122.105.174.175.035.052.053.104.035.156a.8.8 0 0 1-.14.314c-.069.087-.104.175-.156.262-.017.07-.017.122-.017.192.017.087.07.174.14.244.034.017.051.035.069.052.07.087.104.174.087.261s-.052.157-.105.245a.4.4 0 0 0-.07.226c0 .053.036.105.07.157.018.018.018.035.035.052.035.07.035.14-.017.21-.035.052-.087.087-.14.14-.087.104-.226.156-.366.19a3.5 3.5 0 0 1-.732.036 1.34 1.34 0 0 0-.645.052 3.4 3.4 0 0 1-.715.122c-.122.018-.261.035-.4.07a2.3 2.3 0 0 1-.49.052 2.6 2.6 0 0 0-.505.087c-.191.053-.383.07-.592.035a.33.33 0 0 1-.192-.122c-.035-.035-.07-.087-.122-.122-.122-.087-.175-.192-.192-.314s.017-.261.105-.366c.104-.122.087-.296-.053-.383a.43.43 0 0 1-.192-.297c0-.052 0-.104.018-.157a.32.32 0 0 0-.122-.383.4.4 0 0 1-.157-.262c-.017-.087.017-.191.087-.279.175-.209.087-.488-.174-.61-.14-.07-.227-.174-.244-.314a.3.3 0 0 1 .087-.261c.157-.21.104-.453-.105-.593a.22.22 0 0 1-.122-.157c0-.035.018-.087.035-.122a.29.29 0 0 0-.035-.314.1.1 0 0 1-.052-.087c-.017-.07.017-.122.07-.174a.41.41 0 0 0 .14-.332.77.77 0 0 0-.437-.557c-.157-.088-.261-.21-.279-.367a.48.48 0 0 1 .087-.33Z"></path><path class="cls-14" d="M666.59 1146.33c-.035.069-.14.121-.227.104-.296-.035-.61 0-.871.122h-.07c-.105.017-.192-.035-.21-.105l-.017-.174c0 .035.018.07.07.104s.14.035.21 0c.26-.104.575-.14.871-.104.087.017.192-.035.21-.105 0-.017.017-.035.017-.052l.017.157zm-.628 2.074c-.087 0-.156-.052-.174-.122v-.017c0-.07.052-.122.14-.14.017-.017.034-.017.052-.017q0-.018-.018-.018c-.017-.017-.034-.035-.034-.052a.14.14 0 0 1 .052-.157c.087-.052.192-.052.261 0q.183.105.419.157c.087 0 .157.052.157.122v.017c0 .088-.088.14-.192.14-.21 0-.401.035-.61.087z"></path><path class="cls-14" d="M666.346 1146.277c-.296-.035-.61 0-.872.105-.07.034-.157.034-.209 0s-.07-.07-.07-.105.018-.07.053-.105a.21.21 0 0 1 .261-.017 1.45 1.45 0 0 1 .715-.087.22.22 0 0 1 .21-.07c.069.017.139.07.139.122 0 .017-.018.035-.018.052-.017.07-.122.122-.209.105m-.628-4.289a.22.22 0 0 1 .21-.07c.07.018.139.07.139.122v.018s-.017 0-.017.017c-.018.087-.122.14-.227.122-.28-.035-.593 0-.872.105-.07.034-.14.034-.192 0-.035-.018-.052-.053-.07-.088v-.017c0-.035.018-.087.053-.105a.21.21 0 0 1 .261-.017c.227-.087.489-.122.715-.087m-.888 5.3-.018-.017v-.018c.104 0 .192-.07.192-.14l.017.14c.017.07-.052.14-.14.157 0-.035 0-.087-.052-.122m.977 1.151-.018-.157c.018.07.087.122.175.122h.052c.209-.052.4-.087.61-.087.105 0 .192-.052.192-.14l.017.14v.017c0 .087-.087.14-.192.157-.209 0-.4.018-.61.07h-.017c-.105.017-.192-.035-.21-.122m-.295-4.115c.19-.052.4-.087.61-.087.104 0 .191-.052.191-.14l.017.14v.017c0 .088-.087.14-.191.14-.21.017-.401.035-.61.087h-.018c-.105.017-.21-.035-.21-.122l-.016-.157c.017.07.07.122.174.122z"></path><path class="cls-14" d="M665.736 1143.801q.183.105.418.157c.087 0 .157.052.157.122v.017c0 .088-.087.14-.192.14-.209 0-.418.035-.61.087h-.052c-.105 0-.157-.052-.175-.122v-.017c0-.07.053-.122.14-.14.017-.017.035-.017.052-.017 0-.018-.017-.018-.017-.018a.1.1 0 0 1-.053-.087c0-.052.035-.087.07-.122a.24.24 0 0 1 .262 0m-.785-1.499c.28-.105.593-.14.872-.105.105.018.21-.035.227-.122 0-.017.017-.017.017-.017l.017.14v.051c-.034.07-.14.123-.226.105-.297-.035-.61 0-.872.122h-.07c-.104.017-.192-.035-.209-.105l-.017-.156c.017.035.034.07.07.087.052.035.121.035.191 0"></path><path class="cls-14" d="M662.458 1143.592a.77.77 0 0 1 .436.558.41.41 0 0 1-.14.331c-.052.052-.087.105-.07.174 0 .035.018.07.053.088.07.087.087.209.035.314a.3.3 0 0 0-.035.121.22.22 0 0 0 .122.157c.21.14.261.384.104.593a.3.3 0 0 0-.087.262c.018.14.105.244.244.313.262.122.35.401.175.61-.07.088-.105.192-.087.28q.026.156.156.261a.32.32 0 0 1 .122.384c-.017.052-.017.104-.017.157a.43.43 0 0 0 .192.296c.14.087.157.262.052.384-.087.104-.122.244-.104.366s.07.226.191.314c.053.034.088.087.122.122.053.07.122.104.192.122.21.034.401.017.593-.035.174-.053.331-.07.506-.088.156 0 .33-.017.488-.052.14-.035.279-.052.4-.07.245-.017.472-.052.716-.122.209-.07.418-.087.645-.052.226.018.488 0 .732-.035.14-.035.279-.087.366-.192.052-.052.105-.087.14-.139a.185.185 0 0 0 .017-.21c-.017-.017-.017-.034-.035-.052-.035-.052-.07-.104-.07-.156 0-.07.018-.157.07-.227.052-.087.087-.157.105-.244s-.018-.175-.088-.262a.2.2 0 0 0-.07-.052.5.5 0 0 1-.139-.244c0-.07 0-.122.018-.192.052-.087.087-.174.157-.261a.8.8 0 0 0 .14-.314c.016-.053 0-.105-.036-.157a.8.8 0 0 0-.174-.175.27.27 0 0 1-.087-.174c-.018-.07 0-.14.034-.192s.053-.087.07-.14a.6.6 0 0 1 .087-.174c.07-.07.105-.14.157-.226a.14.14 0 0 0-.052-.157.2.2 0 0 0-.07-.053.46.46 0 0 1-.209-.313c-.017-.035-.017-.07 0-.122a2 2 0 0 1 .192-.506.6.6 0 0 0 .087-.174c.035-.07.017-.157-.035-.227s-.122-.122-.192-.174a.7.7 0 0 1-.191-.192.33.33 0 0 1-.088-.175c0-.035 0-.087.018-.14a2 2 0 0 1 .226-.522c.035-.07.07-.14.105-.192a.4.4 0 0 0 .087-.14c.035-.052.018-.122-.017-.174l-.122-.122a.33.33 0 0 1-.14-.261c-.017-.053 0-.122.018-.192.017-.053.052-.105.087-.175.035-.035.052-.052.07-.087.052-.122-.035-.244-.175-.261-.017-.018-.052-.018-.07-.018-.104 0-.191.018-.278.035a.9.9 0 0 1-.367.07c-.47.035-.924.104-1.377.21-.261.051-.54.069-.802.069-.21 0-.4.017-.61.07-.297.07-.628.121-.942.139-.348.017-.697.07-1.028.122-.21.017-.401.035-.593.035-.175 0-.314.104-.331.244v.035a.27.27 0 0 0 .104.14c.192.139.244.365.105.54a.48.48 0 0 0-.087.331c.017.157.122.28.279.366Zm-1.011-1.953 7.619-.941.035.296.104 8.491v.017l-5.736.698-1.987-8.265z"></path><path class="cls-14" d="M664.376 1143.33c0-.034 0-.087-.052-.122l-.018-.017v-.017c.105 0 .192-.07.192-.14l.017.14c.018.07-.052.14-.14.157m-.383 4.044-.017-.157c0 .07.07.105.157.122q.235.027.418.157c.07.053.175.053.262-.017l.07-.07.017.105a.16.16 0 0 1-.07.14.24.24 0 0 1-.261 0 .9.9 0 0 0-.419-.158c-.087 0-.157-.052-.157-.122m-.052 1.814c.07-.07.192-.088.261-.035.227-.07.489-.105.715-.088q.078-.079.21-.052c.07 0 .121.052.139.105v.035l-.018.017c-.017.087-.122.14-.226.122-.28-.035-.593 0-.872.105-.052.035-.14.017-.192-.018-.035-.017-.052-.052-.07-.087q0-.053.053-.105Z"></path><path class="cls-14" d="M663.626 1143.26q-.131-.026-.157-.104v-.035c0-.087.087-.157.192-.157.21 0 .4-.017.61-.07.017 0 .035-.017.052-.017a.17.17 0 0 1 .175.14v.017c0 .07-.087.14-.192.14v.017l.017.017c.053.035.053.087.053.122l-.07.07c-.087.07-.192.07-.262 0a1.1 1.1 0 0 0-.418-.14m-.174 2.04c-.035-.017-.053-.052-.07-.087q0-.052.052-.104c.07-.07.192-.087.262-.035.226-.07.47-.105.715-.087a.2.2 0 0 1 .191-.053c.07 0 .14.053.157.105v.035c-.017 0-.017.017-.017.017-.018.088-.122.14-.227.122-.279-.035-.593 0-.872.105a.19.19 0 0 1-.191-.017Z"></path><path class="cls-14" d="M663.382 1145.213c.017.035.035.07.07.088a.19.19 0 0 0 .191.017c.28-.105.593-.14.872-.105.105.018.21-.034.227-.122 0 0 0-.017.017-.017l.018.14s0 .017-.018.034c-.017.088-.122.14-.226.122-.28-.034-.593 0-.872.105-.018.017-.035.017-.052.017-.105.018-.192-.034-.21-.122zm.732 4.359c-.104.018-.192-.035-.209-.122l-.017-.157c.017.035.034.07.07.088.052.034.139.052.191.017.28-.105.593-.14.872-.105.105.018.21-.035.227-.122l.017-.017.017.14v.034a.21.21 0 0 1-.226.122c-.297-.035-.61 0-.872.105-.018.017-.052.017-.07.017m.018-2.232c-.087-.017-.157-.052-.157-.121v-.018c0-.087.087-.157.192-.157.209 0 .4-.017.61-.07.017 0 .035-.017.052-.017.105 0 .157.052.174.14v.017c0 .07-.087.14-.191.14v.017l.017.017c.052.035.052.087.052.122l-.07.07c-.087.07-.191.07-.26.017a.9.9 0 0 0-.42-.157m-.661-4.184q.025.078.156.105c.157.017.296.07.418.14.07.069.175.069.262 0l.07-.07.017.104a.16.16 0 0 1-.07.14.24.24 0 0 1-.261 0 .9.9 0 0 0-.419-.157c-.087 0-.157-.053-.157-.122zm3.294 1.744c.053.034.14.034.192.017.28-.122.593-.157.872-.122.105.017.21-.035.227-.105l.017-.017.017.122v.052c-.034.07-.139.122-.226.105-.297-.035-.61 0-.872.122-.035 0-.052 0-.07.017-.104 0-.192-.052-.209-.122l-.017-.157c.017.035.035.07.07.088"></path><path class="cls-14" d="M666.956 1144.917c-.052.017-.14.017-.192-.017-.034-.018-.052-.053-.07-.088a.2.2 0 0 1 .053-.122.21.21 0 0 1 .262-.017c.226-.087.488-.122.714-.087a.22.22 0 0 1 .21-.07c.07.017.139.07.139.122v.035l-.017.017c-.018.07-.122.122-.227.105a1.7 1.7 0 0 0-.872.122m.244 3.975c0-.035.018-.087.053-.122a.21.21 0 0 1 .261-.017 1.45 1.45 0 0 1 .715-.087.22.22 0 0 1 .21-.07.2.2 0 0 1 .139.122v.052c-.035.07-.14.122-.227.105-.297-.035-.61 0-.872.122-.07.017-.157.017-.21-.018-.034-.017-.034-.034-.051-.052zm.75-6.172c.105 0 .192-.07.192-.14l.017.14c.018.07-.052.14-.14.157 0-.035 0-.087-.052-.122l-.017-.017zm-.331 4.045c0 .07.07.105.157.122q.235.027.418.157a.21.21 0 0 0 .262-.017l.07-.07.017.105a.16.16 0 0 1-.07.139.24.24 0 0 1-.262 0 .9.9 0 0 0-.418-.157c-.087 0-.157-.052-.157-.122z"></path><path class="cls-14" d="M667.619 1146.748c0-.088.087-.157.191-.157.21 0 .419-.018.61-.07.018 0 .036-.017.053-.017.087 0 .157.052.174.122v.035c0 .07-.087.14-.191.14v.017s.017 0 .017.017c.052.035.052.087.052.122l-.07.07a.21.21 0 0 1-.26.017.9.9 0 0 0-.42-.157c-.087-.017-.156-.052-.156-.122z"></path><path class="cls-14" d="M668.456 1146.8c.104 0 .191-.07.191-.14l.018.14c.017.07-.053.14-.14.157 0-.035 0-.087-.052-.122 0-.018-.017-.018-.017-.018zm-1.168-3.836c-.088 0-.157-.052-.157-.122l-.018-.157c0 .07.07.105.157.122.157.018.297.07.419.14.07.07.174.07.261 0l.07-.07.017.105a.16.16 0 0 1-.07.14.24.24 0 0 1-.261 0 .9.9 0 0 0-.418-.158m-.053 6.086-.017-.123c.017.018.017.035.052.052.052.035.14.035.21.018.26-.122.575-.157.871-.122.087.017.192-.035.227-.105l.017.105v.052c-.035.07-.14.122-.227.105-.296-.035-.61 0-.871.122-.018 0-.053 0-.07.017-.105 0-.192-.052-.192-.122"></path><path class="cls-14" d="M667.113 1142.668c0-.087.087-.157.192-.157.21 0 .4-.017.61-.07.017 0 .035-.017.052-.017.105 0 .175.07.175.157 0 .07-.087.14-.192.14v.017l.017.017c.053.035.053.087.053.122l-.07.07c-.087.07-.192.07-.262 0a1.1 1.1 0 0 0-.418-.14c-.087-.017-.157-.052-.157-.122zm7.777 8.422.087-.053c.052-.053.139-.035.191.017.018.035.035.052.035.087s-.035.088-.07.105l-.087.07-.697.523-1.203.924-.174-.227 1.22-.906z"></path><path class="cls-14" d="M676.371 1152.693c.035.052.018.122-.017.157-.052.035-.122.035-.157-.017l-.593-.785-.558-.732.088-.07c.034-.017.07-.07.07-.105l.575.785zm-14.471-1.761-2.842 6.713a7.64 7.64 0 0 0-4.29-.035l-2.737-6.748a14.97 14.97 0 0 1 9.869.07"></path><path class="cls-14" d="M654.769 1157.61a7.64 7.64 0 0 1 4.289.035l-.087.209a7.34 7.34 0 0 0-4.115-.035zm-2.825-6.957a15.15 15.15 0 0 1 10.043.07l-.087.21a14.96 14.96 0 0 0-9.868-.07zm22.841 7.497.662.279-.192.454-.662-.279z"></path><path class="cls-14" d="m682.683 1165.84-8.805-3.714.192-.454 7.253 3.052 1.395.592.61-1.447.575-1.325-1.412-.593-7.236-3.068.192-.453 8.805 3.713c.087.053.122.14.087.227l-1.43 3.382c-.052.088-.139.122-.226.088"></path><path class="cls-14" d="m675.255 1158.883-1.185 2.789-.645-.279 1.168-2.789zm-1.83 2.51.645.279-.192.454-.645-.279z"></path><path class="cls-17" d="m681.323 1164.724-7.253-3.052 1.185-2.789 7.236 3.068 1.412.593-.575 1.325-.61 1.447z"></path><path class="cls-14" d="m666.451 1168.978-.523-4.272.069-.017.21 1.708.313 2.476v.087z"></path><path class="cls-14" d="m665.701 1164.724.227-.018.523 4.272-.21.017z"></path><path class="cls-14" d="m666.276 1169.309-.035-.314.21-.017.034.314c.018.052-.034.104-.087.122-.052 0-.122-.035-.122-.105m4.882-.61a.095.095 0 0 1-.087.122.095.095 0 0 1-.122-.087l-.575-4.586.226-.017zm-.645-2.842.314 2.476-4.307.54-.313-2.476z"></path><path class="cls-14" d="m665.997 1164.689 4.307-.523.209 1.691-4.306.54zm-1.935 4.568 2.18-.262.034.314c0 .07.07.105.122.105.052-.018.105-.07.087-.122l-.034-.314.07-.018.505 4.15h-.018l-2.423.296zm2.476 4.393a.27.27 0 0 1 .192.14c.017.035.017.07.017.105 0 .156-.105.261-.262.261a.257.257 0 0 1-.261-.261c0-.14.122-.245.261-.245z"></path><path class="cls-14" d="m667.043 1173.389-.313.4a.27.27 0 0 0-.192-.139l.331-.418c.035-.035.105-.052.157-.017a.134.134 0 0 1 .017.174m-.523-4.516 4.307-.54.54 4.324-4.324.523-.017-.07-.506-4.15z"></path><path class="cls-17" d="m643.453 1182.508-.802-.122-.802-.105-.122-.017-.104-.018h-.053l2.529-18.185 2.964.401-2.529 18.185h-.034l-.122-.017-.122-.018z"></path><path class="cls-14" d="M671.978 1172.97c.035 0 .07-.017.122-.017.14 0 .261.105.261.262 0 .14-.122.244-.261.244-.157 0-.262-.105-.262-.244v-.053a.27.27 0 0 1 .14-.192"></path><path class="cls-14" d="M671.978 1172.97a.27.27 0 0 0-.14.192l-.4-.331a.114.114 0 0 1-.036-.157.134.134 0 0 1 .175-.017zm-26.921 9.59c-.017.105-.087.157-.191.157l-.262-.053-.07-.017 2.529-18.185.505.07zm-.959-18.499-2.528 18.185h-.07l-.26-.035c-.106-.017-.158-.104-.14-.192l2.493-18.028zm-7.305-1.43a.35.35 0 0 1-.052-.348l.68-1.378c0-.017.035-.035.035-.035q0-.017.017-.017h.035s.017 0 .017.017c.018 0 .035 0 .053.018l.156.383c.035.053.07.087.14.07l.523.976c.07.122.192.192.314.175-.035.052-.07.104-.14.14a2.17 2.17 0 0 1-1.621.104c-.018 0-.035 0-.052-.018a.23.23 0 0 1-.105-.087m.663-2.074-.105-.262-.017-.017-.053-.122c-.017-.053.018-.122.07-.14s.122 0 .14.052l.174.401v.018l-.105.035a.2.2 0 0 0-.087.087l-.017-.035z"></path><path class="cls-14" d="M637.56 1160.836c.035 0 .087 0 .122-.018l.105-.035v.018l.157.383q.026.105-.053.157h-.017c-.07.017-.105-.017-.14-.07l-.156-.383v-.018z"></path><path class="cls-14" d="M637.473 1160.73c-.017-.034-.017-.086 0-.121s.052-.07.087-.087l.105-.035v-.018h.052v-.017l.75-.296 1.098-.436.175-.07.122.279-1.273.523-.75.314h-.035l-.017.017-.105.035c-.035.018-.087.018-.122.018v-.018h-.017c-.035-.017-.052-.052-.07-.087Z"></path><path class="cls-14" d="m637.944 1161.184-.157-.383v-.018s.017 0 .017-.017h.035c.018.017.035.035.052.035l1.517.209a.35.35 0 0 0 .332-.157c.017.07.035.122.017.192a2.1 2.1 0 0 1-.872 1.395s-.017.017-.035.017c-.052.017-.087.035-.14.035-.121.017-.243-.052-.313-.174l-.523-.977h.017q.079-.052.053-.157m-.209-.784.941-1.203c0-.018.017-.035.017-.035.14-.14.35-.14.471 0 .175.157.297.348.401.558l-1.098.435-.75.297c0-.018 0-.035.018-.052m-2.18.732a.32.32 0 0 1 .262-.227l1.499-.261c.017 0 .035 0 .052.017l-.348.14a.12.12 0 0 0-.07.14c.035.051.087.086.157.069l.348-.14s-.034.018-.034.035l-.68 1.378a.35.35 0 0 0 .052.348c-.07 0-.122 0-.192-.035a2.2 2.2 0 0 1-1.046-1.255c0-.017-.017-.035-.017-.035-.018-.052 0-.104.017-.157z"></path><path class="cls-14" d="M635.817 1160.905a.32.32 0 0 0-.262.227c-.052-.035-.07-.087-.087-.14a2.15 2.15 0 0 1 .4-1.586c0-.018.018-.035.018-.035.14-.14.349-.14.471-.018l.976.925.018.017.104.261v.018c-.017.017-.034.035-.017.052l-.017.018-.053.017c-.017-.017-.034-.017-.052-.017z"></path><path class="cls-14" d="m637.456 1160.87-.35.14c-.069.017-.121-.018-.156-.07a.12.12 0 0 1 .07-.14l.348-.139.053-.017.017-.018.035-.017c-.017.035-.017.087 0 .122s.035.07.07.087l-.035.018-.018.017h-.017zm10.304-13.686.157-1.186.035-.21.157-1.132.034-.227.157-1.186.035-.209h.035l.052-.052c.105-.035.227 0 .262.104h.035l-.192 1.395-.035.227-.157 1.133-.035.21-.157 1.185-.209 1.57-.14.94-.383-.052.122-.941.035-.227.157-1.133z"></path><path class="cls-14" d="m647.533 1148.753-.122.941-1.604-.226c-.017-.035-.035-.053-.052-.088a.55.55 0 0 1-.07-.279c.018-.104.07-.191.14-.261s.156-.122.261-.157c.174-.07.349-.087.54-.07zm.227-1.569-.035.209-.907-.122a1.26 1.26 0 0 1-.61-.244c-.104-.07-.192-.175-.261-.297s-.105-.261-.087-.418a.67.67 0 0 1 .191-.384c.105-.087.21-.157.332-.209.209-.07.435-.087.645-.07l.924.14-.035.21-.907-.123a.95.95 0 0 0-.54.052q-.157.053-.262.157c-.105.104-.122.157-.14.262 0 .104.018.192.07.279s.122.174.192.227c.157.104.332.174.506.209zm.383.052.157-1.186h.018l.906.122c.192.035.366.105.506.21.087.07.157.139.21.226s.069.192.051.28a.46.46 0 0 1-.122.26q-.13.105-.261.158a.96.96 0 0 1-.54.052zm.157-3.993-.156 1.186-.925-.122a1 1 0 0 1-.505-.21.4.4 0 0 1-.192-.226.5.5 0 0 1-.07-.28c.018-.086.07-.173.14-.243s.157-.14.261-.175a1.4 1.4 0 0 1 .54-.052zm.227 1.238.192-1.395.924.122c.21.035.418.122.593.244.122.088.209.175.279.297s.104.279.087.418a.75.75 0 0 1-.21.384.67.67 0 0 1-.33.209c-.21.087-.437.105-.646.07l-.924-.122zm-.732 5.266.14-.942.906.122c.192.035.366.105.505.21.088.052.157.139.21.226s.07.174.052.279c-.017.087-.052.192-.122.244l-.087.087z"></path><path class="cls-14" d="m647.568 1148.526-.035.227-.906-.14a1.1 1.1 0 0 0-.54.07q-.159.052-.262.157c-.103.105-.122.157-.14.261a.56.56 0 0 0 .07.28c.017.034.035.052.052.087l-.279-.035a.67.67 0 0 1 .14-.75c.104-.087.209-.174.33-.21.21-.069.437-.104.663-.069zm-.157-5.614.924.122-.035.21-.906-.123c-.192-.017-.366 0-.54.052-.105.035-.193.105-.262.175s-.122.157-.14.244c0 .105.018.21.07.279a.4.4 0 0 0 .192.227 1 1 0 0 0 .505.209l.924.122-.034.227-.925-.122a1.5 1.5 0 0 1-.592-.245 1 1 0 0 1-.262-.296.6.6 0 0 1-.087-.418c.017-.157.087-.28.192-.384s.209-.174.331-.21a1.2 1.2 0 0 1 .645-.069m.506 3.086-.157 1.186-.924-.122a1.4 1.4 0 0 1-.506-.21c-.07-.052-.14-.14-.192-.226s-.07-.175-.07-.28c.018-.104.07-.191.14-.26s.157-.123.262-.158a.95.95 0 0 1 .54-.052zm-11.857 5.231a1.4 1.4 0 0 1 .105-.663c.07-.21.157-.418.28-.628q.156-.287.365-.575c.14-.174.297-.331.454-.488.174-.157.348-.297.54-.419.21-.122.419-.209.628-.279a.9.9 0 0 1 .662.105l.454.349v.017l2.632 2.057-2.772 3.557-2.633-2.057-.453-.366a.9.9 0 0 1-.261-.61"></path><path class="cls-14" d="M635.224 1151.002a5.05 5.05 0 0 1-1.674-2.406l-.279-.802-.157-.488a1 1 0 0 1 .14-.593c.14-.157.279-.314.453-.436.157-.122.349-.227.523-.314l.575-.261.593-.175.628-.087a1.8 1.8 0 0 1 .61 0c.21.017.418.087.593.21.07.052.122.139.157.226l.087.279.349 1.011a.6.6 0 0 0 .174.28l.453.348c-.279.052-.54.174-.802.314-.436.261-.82.61-1.116 1.046-.296.418-.54.872-.732 1.342a1.6 1.6 0 0 0-.122.855z"></path><path class="cls-14" d="M632.888 1146.59a4.55 4.55 0 0 1 4.271-1.411c.105.017.192.07.262.121a.606.606 0 0 1 .052.855l-.087-.28a.53.53 0 0 0-.157-.226 1.2 1.2 0 0 0-.593-.21 1.8 1.8 0 0 0-.61 0l-.628.088-.593.174-.575.262a3 3 0 0 0-.523.314 2.7 2.7 0 0 0-.453.436 1 1 0 0 0-.14.593l.157.488c-.035-.018-.087-.053-.122-.07a.82.82 0 0 1-.261-1.133m2.912 3.905a6.7 6.7 0 0 1 .732-1.342 3.5 3.5 0 0 1 1.115-1.046c.262-.14.524-.262.802-.314a.77.77 0 0 1 .646.122c.244.174.4.418.453.715l-.453-.349a.9.9 0 0 0-.663-.105c-.21.07-.418.157-.628.28a4 4 0 0 0-.54.418 6 6 0 0 0-.453.488q-.21.288-.367.575c-.122.21-.209.419-.279.628-.087.21-.122.436-.104.663 0 .226.104.453.261.61l.454.366a.98.98 0 0 1-1.099-.854 1.6 1.6 0 0 1 .122-.855"></path><path class="cls-14" d="M632.19 1141.709c.157-.122.349-.227.523-.314l.576-.261.592-.175.61-.104c.21-.018.419-.018.628.017s.401.105.576.21c.087.051.14.139.174.226l.087.279 1.203 3.592a4.55 4.55 0 0 0-4.271 1.412l-1.134-3.383-.157-.47a.8.8 0 0 1 .14-.593c.14-.157.279-.314.453-.436"></path><path class="cls-14" d="M631.144 1141.36a.7.7 0 0 0-.174-.261l-.576-.436-.47-.366a1.3 1.3 0 0 1-.262-.61c0-.227.035-.454.122-.68.052-.21.14-.419.261-.61l.384-.576.453-.506c.175-.157.349-.296.54-.418s.402-.21.628-.262c.227-.035.454 0 .646.105l.47.366.558.436a4.9 4.9 0 0 1 1.691 2.406l.227.663a4.59 4.59 0 0 0-4.289 1.412z"></path><path class="cls-14" d="M631.632 1143.156a.843.843 0 0 1-.279-1.133 4.59 4.59 0 0 1 4.29-1.413.7.7 0 0 1 .26.122.606.606 0 0 1 .053.855l-.087-.28a.45.45 0 0 0-.175-.226q-.261-.157-.575-.21c-.314-.052-.418-.034-.628-.017l-.61.105-.593.174-.575.262a3 3 0 0 0-.523.314c-.175.122-.314.279-.453.436a.8.8 0 0 0-.14.592l.157.471c-.052-.017-.087-.035-.122-.052m-1.499-5.562c.296-.418.68-.767 1.133-1.029.244-.157.523-.261.802-.33.21-.053.453 0 .645.139.227.174.401.435.453.732l-.47-.366a1.02 1.02 0 0 0-.646-.105q-.339.078-.627.262c-.288.184-.366.261-.54.418l-.454.506-.384.575a2.1 2.1 0 0 0-.261.61 1.9 1.9 0 0 0-.122.68c.035.227.122.436.261.61l.471.367c-.54.052-1.046-.332-1.098-.872-.035-.28 0-.576.104-.837q.288-.733.733-1.36"></path><path class="cls-14" d="M631.266 1136.565c-.453.262-.837.61-1.133 1.03s-.54.87-.733 1.36c-.104.26-.14.557-.104.836l-2.633-2.04a3.12 3.12 0 0 0 2.79-3.4c-.018-.052-.018-.104-.035-.157l2.65 2.04a2.7 2.7 0 0 0-.802.332Z"></path><path d="M626.646 1137.577a2.936 2.936 0 0 0 2.632-3.208c0-.053-.017-.105-.017-.157a.72.72 0 0 0-.296-.384l-1.482-1.15c-.541-.35-1.273-.175-1.622.366l-.54.697-.646.837a1.19 1.19 0 0 0 .018 1.639l1.5 1.168a.8.8 0 0 0 .453.192m2.772-3.383c.017.052.017.105.035.157a3.12 3.12 0 0 1-2.79 3.4.66.66 0 0 1-.575-.244l-.89-.698-.575-.435-.017-.018a1.35 1.35 0 0 1-.053-1.9l1.169-1.5a1.35 1.35 0 0 1 1.848-.418l1.5 1.15a.6.6 0 0 1 .348.506" style="stroke-linejoin: round; stroke-linecap: round; fill: rgb(166, 124, 82); stroke-width: 0.3487px; stroke: rgb(140, 98, 57)"></path><path class="cls-17" d="M629.278 1134.369a2.936 2.936 0 0 1-2.632 3.208.8.8 0 0 1-.454-.192l-1.499-1.168a1.19 1.19 0 0 1-.017-1.64l.645-.836.54-.697c.349-.541 1.081-.715 1.622-.367l1.482 1.151c.14.087.244.227.296.384 0 .052.017.104.017.157"></path><path class="cls-15" d="m661.987 1150.723.14-.349 5.126 6.765-8.422 1.046.14-.331.087-.209 2.842-6.713zm8.561-1.395 2.423 3.208.175.227 2.51 3.33-8.403 1.046z"></path><path class="cls-15" d="m670.548 1149.328-3.295 7.811-5.126-6.765 1.342-.174 5.736-.697zm-4.847 15.396-1.761.226 3.313-7.811 5.108 6.765-1.761.209v.018l-.226.017-.07.018-4.307.523-.069.017zm6.66-.82-5.108-6.765 8.403-1.046-.871 2.057-.192.454-1.168 2.789-.192.454zm-5.108-6.765-3.313 7.811-5.109-6.765zm-15.309-6.486.088.209 2.737 6.748.087.209.14.331-8.404-1.168 5.213-6.677z"></path><path class="cls-15" d="m654.996 1158.15-5.214 6.696-3.19-7.846v-.018zm-8.404-1.15-5.213 6.677-1.517-3.748-.122-.279-1.552-3.836 8.404 1.168zm1.203-7.253 1.604.226.279.035 2.127.297-5.213 6.677-3.191-7.846 2.127.297.279.035 1.604.226z"></path><path class="cls-15" d="m646.592 1156.982-8.404-1.168 1.22-1.552 2.773-3.556 1.22-1.57zm0 .018 3.19 7.846-2.214-.314-.505-.07-2.965-.401-.505-.07-2.214-.314z"></path><path class="cls-11" d="M1327.84 770.09v28.77l-14.39-14.38z"></path><path class="cls-11" d="M1327.84 798.86h-28.78l14.39-14.38z"></path><path class="cls-10" d="m1299.06 770.09 14.39 14.39-14.39 14.38z"></path><path class="cls-10" d="m1327.84 770.09-14.39 14.39-14.39-14.39z"></path><path class="cls-16" d="m490.165 743.214-133.137.358-.358-133.137 133.137-.358z"></path><g id="pickleball"><path class="cls-6" d="M410.815 725.333h-41.63v-97.074h41.63z"></path><path class="cls-1" d="M368 676.796h44"></path><path class="cls-6" d="M390 628.259v32.963m0 31.148v32.963m-20.815-64.111h41.63m-41.63 31.148h41.63m66.3 32.963h-41.63v-97.074h41.63z"></path><path class="cls-1" d="M434.3 676.796h44"></path><path class="cls-6" d="M456.3 628.259v32.963m0 31.148v32.963m-20.815-64.111h41.63m-41.63 31.148h41.63"></path></g><g id="retaining-wall"><path d="m355.688 617.439-.021-8 135.136-.364.021 8 1-.003 1-.002-.027-10-139.136.374.027 10 1-.002zm135.457 118.772.022 8-135.136.364-.022-8-1 .003-1 .003.027 10 139.136-.375-.027-10-1 .002z" style="stroke-miterlimit: 10; fill: rgb(102, 102, 102); stroke: rgb(102, 102, 102)"></path></g><g id="fence"><path class="cls-16" d="m491.824 617.072.321 119.136"></path><path class="cls-7" d="m491.824 617.072.004 1.5"></path><path class="cls-4" d="m491.856 628.76.271 100.855"></path><path class="cls-7" d="m492.141 734.708.004 1.5"></path><path d="m490.335 615.591 2.97-.008.009 2.971-2.971.008zm.321 119.136 2.97-.008.009 2.971-2.971.008z"></path><path class="cls-16" d="m354.688 617.442.321 119.136"></path><path class="cls-7" d="m354.688 617.442.004 1.5"></path><path class="cls-4" d="m354.72 629.129.271 100.855"></path><path class="cls-7" d="m355.005 735.078.004 1.5"></path><path d="m353.199 615.961 2.97-.008.009 2.971-2.971.008zm.321 119.136 2.97-.008.009 2.971-2.971.008z"></path><path d="m491.824 617.072.321 119.136M354.688 617.442l.321 119.136" style="stroke-miterlimit: 10; stroke: rgb(0, 0, 0); fill: rgb(255, 255, 255); stroke-width: 0.75px"></path></g></g></g></svg>`;
+const STATUS_CLASSES = {0:'s0',1:'s1',3:'s3',5:'s5',6:'s6',9:'s9'};
+const ACTIVE_STATUS = new Set([1,3,5,6,9]);
+const byId = {}; LOTS.forEach(l=>byId[l.id]=l);
+const $ = s=>document.querySelector(s);
+
+/* ---------------- storage (IndexedDB single record, localStorage fallback) --------------- */
+const Store = (()=>{
+  let db=null, mem=null, useLS=false;
+  const KEY='ccneighbors', LS='ccneighbors_v1';
+  function open(){return new Promise(res=>{
+    let ok=false;
+    try{
+      const rq=indexedDB.open('ccneighbors',1);
+      rq.onupgradeneeded=()=>rq.result.createObjectStore('kv');
+      rq.onsuccess=()=>{db=rq.result;ok=true;res();};
+      rq.onerror=()=>{useLS=true;res();};
+      setTimeout(()=>{if(!ok&&!db){useLS=true;res();}},1500);
+    }catch(e){useLS=true;res();}
+  });}
+  async function load(){
+    if(useLS||!db){try{return JSON.parse(localStorage.getItem(LS))||null;}catch(e){return null;}}
+    return new Promise(res=>{try{
+      const tx=db.transaction('kv','readonly').objectStore('kv').get(KEY);
+      tx.onsuccess=()=>res(tx.result||null); tx.onerror=()=>res(null);
+    }catch(e){res(null);}});
+  }
+  async function save(state){
+    mem=state;
+    if(useLS||!db){try{localStorage.setItem(LS,JSON.stringify(state));}catch(e){toast('Storage full — remove some photos');}return;}
+    return new Promise(res=>{try{
+      const tx=db.transaction('kv','readwrite').objectStore('kv').put(state,KEY);
+      tx.onsuccess=()=>res(); tx.onerror=()=>{try{localStorage.setItem(LS,JSON.stringify(state));}catch(e){}res();};
+    }catch(e){res();}});
+  }
+  return {open,load,save};
+})();
+
+let STATE={version:1, units:{}, status:{}, statusUpdated:DATA.captured};
+let saveTimer=null;
+function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>Store.save(STATE),250);}
+function unit(id){ if(!STATE.units[id]) STATE.units[id]={people:[]}; return STATE.units[id]; }
+function peopleOf(id){ return (STATE.units[id]&&STATE.units[id].people)||[]; }
+function effStatus(l){ const o=STATE.status[l.id]; return o?o.status:l.status; }
+function effStatusLabel(l){ const o=STATE.status[l.id]; return o?o.statusLabel:l.statusLabel; }
+function effPrice(l){ const o=STATE.status[l.id]; return o?o.price:l.price; }
+const uid=()=>Math.random().toString(36).slice(2,10);
+
+/* ---------------- map build ---------------- */
+let mode='neighbors', view='map';
+const mapEl=$('#map');
+function buildMap(){
+  const vb=DATA.viewBox.split(' ').map(Number);
+  mapEl.setAttribute('viewBox',DATA.viewBox);
+  mapEl.setAttribute('width',vb[2]); mapEl.setAttribute('height',vb[3]);
+  // base map (roads/greens) injected as a group
+  const base=document.createElementNS('http://www.w3.org/2000/svg','g');
+  const tmp=document.createElement('div'); tmp.innerHTML=BASEMAP;
+  const src=tmp.querySelector('svg');
+  base.setAttribute('id','basegrp');
+  while(src && src.firstChild){ base.appendChild(src.firstChild); }
+  mapEl.appendChild(base);
+  // lots layer
+  const lg=document.createElementNS('http://www.w3.org/2000/svg','g'); lg.id='lotsgrp';
+  LOTS.forEach(l=>{
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',l.d); p.setAttribute('class','lot'); p.dataset.id=l.id;
+    lg.appendChild(p);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',l.cx); t.setAttribute('y',l.cy); t.setAttribute('class','lotnum'); t.dataset.id=l.id;
+    t.textContent=mapLabel(l); lg.appendChild(t);
+  });
+  mapEl.appendChild(lg);
+  // cache each lot's bounding box so markers can be placed inside the unit
+  LOTS.forEach(l=>{ try{const bb=mapEl.querySelector('.lot[data-id="'+l.id+'"]').getBBox();
+    l._bb={x:bb.x,y:bb.y,w:bb.width,h:bb.height};}catch(e){} });
+  // artwork overlay above the lots: parking-stall lines + trees (non-interactive)
+  const ons='http://www.w3.org/2000/svg';
+  const ov=document.createElementNS(ons,'g'); ov.id='mapoverlay'; ov.setAttribute('pointer-events','none');
+  if(OVERLAY.parkingLines){
+    const pl=document.createElementNS(ons,'path'); pl.setAttribute('d',OVERLAY.parkingLines);
+    pl.setAttribute('fill','none'); pl.setAttribute('stroke','#6d6e71'); pl.setAttribute('stroke-width','1');
+    ov.appendChild(pl);
+  }
+  (OVERLAY.trees||[]).forEach(t=>{
+    const u=document.createElementNS(ons,'use');
+    u.setAttribute('width','18.905'); u.setAttribute('height','20.2');
+    u.setAttribute('transform','translate('+t[0]+' '+t[1]+')scale('+t[2]+')');
+    u.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','#Tree2');
+    u.setAttribute('href','#Tree2');
+    ov.appendChild(u);
+  });
+  (OVERLAY.streets||[]).forEach(s=>{
+    const t=document.createElementNS(ons,'text');
+    t.setAttribute('x',s.x); t.setAttribute('y',s.y); t.setAttribute('class','streetlbl');
+    if(s.size) t.setAttribute('font-size',s.size);
+    if(s.rotate) t.setAttribute('transform','rotate('+s.rotate+' '+s.x+' '+s.y+')');
+    t.textContent=s.text;
+    ov.appendChild(t);
+  });
+  mapEl.appendChild(ov);
+  // markers layer (pins for units with people)
+  const mk=document.createElementNS('http://www.w3.org/2000/svg','g'); mk.id='mkgrp';
+  mapEl.appendChild(mk);
+  refreshMap();
+}
+function refreshMap(){
+  mapEl.className.baseVal='mode-'+mode;
+  const mk=$('#mkgrp'); mk.innerHTML='';
+  LOTS.forEach(l=>{
+    const path=mapEl.querySelector('.lot[data-id="'+l.id+'"]');
+    const txt=mapEl.querySelector('.lotnum[data-id="'+l.id+'"]');
+    const n=peopleOf(l.id).length;
+    const st=effStatus(l);
+    path.className.baseVal='lot '+(STATUS_CLASSES[st]||'s0')+(n?' has':'')+(l.id===selId?' sel':'');
+    // number: white on an active status color; accent on a has-neighbors lot; otherwise faint
+    let tcls='lotnum';
+    if(mode==='status'&&ACTIVE_STATUS.has(st)) tcls+=' act';
+    else if(mode==='neighbors'&&n) tcls+=' hn';
+    txt.className.baseVal=tcls;
+    if(n){
+      const bb=l._bb||{x:l.cx-20,y:l.cy-20,w:40,h:40};
+      const R=Math.max(9,Math.min(13, bb.w/2-2.5, bb.h/2-2.5)); // fit inside the unit
+      const px=bb.x+bb.w-R-3, py=bb.y+R+3;                       // top-right corner, inside bounds
+      const ns='http://www.w3.org/2000/svg';
+      const g=document.createElementNS(ns,'g');
+      const c=document.createElementNS(ns,'circle');
+      c.setAttribute('cx',px); c.setAttribute('cy',py); c.setAttribute('r',R); c.setAttribute('class','pin');
+      const tc=document.createElementNS(ns,'text');
+      tc.setAttribute('x',px); tc.setAttribute('y',py); tc.setAttribute('class','pcount');
+      tc.setAttribute('font-size',Math.round(R*1.25)); tc.textContent=n;
+      g.appendChild(c); g.appendChild(tc); mk.appendChild(g);
+    }
+  });
+}
+function onMapClick(e){
+  const t=e.target.closest('.lot'); if(!t) return;
+  openSheet(+t.dataset.id);
+}
+
+/* ---------------- pan / zoom ---------------- */
+const T={x:0,y:0,k:1};
+let minK=0.2,maxK=6;
+function applyT(){ mapEl.style.transform=`translate(${T.x}px,${T.y}px) scale(${T.k})`; }
+function fitMap(){
+  const w=$('#mapview').clientWidth, h=$('#mapview').clientHeight;
+  const vb=DATA.viewBox.split(' ').map(Number);
+  const k=Math.min(w/vb[2], h/vb[3])*0.98;
+  minK=k*0.6; maxK=k*10;
+  T.k=k; T.x=(w-vb[2]*k)/2; T.y=(h-vb[3]*k)/2; applyT();
+}
+function clampT(){
+  T.k=Math.max(minK,Math.min(maxK,T.k));
+}
+(function panzoom(){
+  const el=$('#mapview'); let pts=new Map(), last=null, pinch=null, moved=0, downT=0;
+  el.addEventListener('pointerdown',e=>{
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    try{el.setPointerCapture(e.pointerId);}catch(_){}
+    moved=0; downT=Date.now();
+    if(pts.size===1) last={x:e.clientX,y:e.clientY};
+    if(pts.size===2){const a=[...pts.values()];pinch={d:dist(a[0],a[1]),cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2,k:T.k,x:T.x,y:T.y};}
+  });
+  el.addEventListener('pointermove',e=>{
+    if(!pts.has(e.pointerId))return;
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===2&&pinch){
+      const a=[...pts.values()], d=dist(a[0],a[1]);
+      let k=pinch.k*(d/pinch.d); k=Math.max(minK,Math.min(maxK,k));
+      const r=el.getBoundingClientRect(), cx=pinch.cx-r.left, cy=pinch.cy-r.top;
+      const wx=(cx-pinch.x)/pinch.k, wy=(cy-pinch.y)/pinch.k;
+      T.k=k; T.x=cx-wx*k; T.y=cy-wy*k; applyT(); moved+=10; return;
+    }
+    if(pts.size===1&&last){
+      const dx=e.clientX-last.x, dy=e.clientY-last.y; moved+=Math.abs(dx)+Math.abs(dy);
+      T.x+=dx; T.y+=dy; last={x:e.clientX,y:e.clientY}; applyT();
+    }
+  });
+  function up(e){
+    const wasTap = pts.has(e.pointerId) && pts.size===1 && moved<8 && Date.now()-downT<400;
+    pts.delete(e.pointerId);
+    if(pts.size<2)pinch=null;
+    if(pts.size===1){const p=[...pts.values()][0];last={x:p.x,y:p.y};}
+    if(pts.size===0){ last=null;
+      if(wasTap) tapAt(e.clientX,e.clientY);
+    }
+  }
+  el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
+  function tapAt(x,y){
+    const hit=document.elementFromPoint(x,y); // hit-test the lot under the finger
+
+    const lot=hit&&hit.closest?hit.closest('.lot'):null;
+    if(lot) openSheet(+lot.dataset.id);
+  }
+  el.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const r=el.getBoundingClientRect(), cx=e.clientX-r.left, cy=e.clientY-r.top;
+    const f=Math.exp(-e.deltaY*0.0015); let k=Math.max(minK,Math.min(maxK,T.k*f));
+    const wx=(cx-T.x)/T.k, wy=(cy-T.y)/T.k; T.k=k; T.x=cx-wx*k; T.y=cy-wy*k; applyT();
+  },{passive:false});
+  function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+})();
+function zoomBy(f){
+  const el=$('#mapview'), cx=el.clientWidth/2, cy=el.clientHeight/2;
+  let k=Math.max(minK,Math.min(maxK,T.k*f));
+  const wx=(cx-T.x)/T.k, wy=(cy-T.y)/T.k; animateTo(cx-wx*k,cy-wy*k,k);
+}
+function animateTo(x,y,k){
+  const s={x:T.x,y:T.y,k:T.k}, t0=performance.now(), dur=260;
+  function step(t){const p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3);
+    T.x=s.x+(x-s.x)*e; T.y=s.y+(y-s.y)*e; T.k=s.k+(k-s.k)*e; applyT();
+    if(p<1)requestAnimationFrame(step);}
+  requestAnimationFrame(step);
+}
+function focusLot(id){
+  const l=byId[id]; if(!l)return;
+  const el=$('#mapview'), w=el.clientWidth, h=el.clientHeight;
+  const k=Math.min(maxK, Math.max(T.k, minK*4.2));
+  animateTo(w/2-l.cx*k, h*0.36-l.cy*k, k);
+}
+
+/* ---------------- selection + sheet ---------------- */
+let selId=null;
+function openSheet(id){
+  selId=id; refreshMap(); focusLot(id); renderSheet(); showSheet(true);
+}
+function showSheet(on){ $('#scrim').classList.toggle('show',on); sheetEl.classList.toggle('show',on);
+  if(!on){selId=null;refreshMap();} }
+const sheetEl=document.createElement('div'); sheetEl.className='sheet'; document.body.appendChild(sheetEl);
+
+function renderSheet(){
+  const l=byId[selId]; const ppl=peopleOf(l.id);
+  const st=effStatus(l), sc=STATUS_CLASSES[st]||'s0', price=effPrice(l);
+  const priceStr=price?('$'+price.toLocaleString()):'';
+  sheetEl.innerHTML=`
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <div class="eyebrow"><span>LOT ${esc(l.lot)} · BLOCK ${esc(l.block)}</span>
+        <span class="pill ${sc}">${esc(effStatusLabel(l))}</span>${priceStr?`<span>${priceStr}</span>`:''}</div>
+      <h2>${l.addr?esc(l.addr):'Lot '+esc(l.lot)}</h2>
+      ${l.addr?'':'<div class="sub">No street address on file for this lot</div>'}
+    </div>
+    <div class="sheet-body">
+      <div class="section-label"><span>People &amp; pets</span><span>${ppl.length||''}</span></div>
+      <div id="pplist"></div>
+      <button class="btn primary block" id="addPerson" style="margin-top:10px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add person or pet</button>
+    </div>`;
+  const list=sheetEl.querySelector('#pplist');
+  if(!ppl.length){ list.innerHTML='<div class="empty-ppl">No one added yet. Tap below to add whoever lives here.</div>'; }
+  ppl.forEach(p=>{
+    const d=document.createElement('div'); d.className='person';
+    d.innerHTML=`<div class="pav">${p.photo?`<img src="${p.photo}" alt="">`:esc(initials(p.name)||(p.kind==='pet'?'🐾':'?'))}</div>
+      <div class="pinfo"><div class="pn">${esc(p.name||'Unnamed')}${p.kind==='pet'?'<span class="tag pet">Pet</span>':''}</div>
+      ${p.note?`<div class="pnote">${esc(p.note)}</div>`:''}</div>
+      <button class="pedit" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>`;
+    d.querySelector('.pedit').onclick=()=>editPerson(l.id,p.id);
+    list.appendChild(d);
+  });
+  sheetEl.querySelector('#addPerson').onclick=()=>editPerson(l.id,null);
+}
+
+/* ---------- person editor ---------- */
+function editPerson(unitId,personId){
+  const u=unit(unitId); const existing=personId?u.people.find(p=>p.id===personId):null;
+  let draft=existing?{...existing}:{id:uid(),name:'',kind:'person',note:'',photo:null};
+  const modal=document.createElement('div'); modal.className='sheet show'; modal.style.zIndex=42;
+  modal.innerHTML=`
+    <div class="grab"></div>
+    <div class="sheet-head"><h2 style="font-size:18px">${existing?'Edit':'Add'} ${draft.kind==='pet'?'pet':'person'}</h2></div>
+    <div class="sheet-body">
+      <div class="photopick">
+        <div class="pv" id="pvBox">${draft.photo?`<img src="${draft.photo}">`:`<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h3l1.5-2h7L18 7h2a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="12.5" r="3.2"/></svg>`}</div>
+        <div><button class="btn ghost" id="pickPhoto" style="height:40px">${draft.photo?'Change photo':'Add photo'}</button>
+        ${draft.photo?'<button class="mini" id="rmPhoto">Remove</button>':''}</div>
+        <input type="file" id="fileInp" accept="image/*" hidden>
+      </div>
+      <div class="kindsel">
+        <button data-k="person" class="${draft.kind==='person'?'on':''}">Person</button>
+        <button data-k="pet" class="${draft.kind==='pet'?'on':''}">Pet</button>
+      </div>
+      <label class="fld"><span class="lab">Name</span>
+        <input class="inp" id="fName" placeholder="${draft.kind==='pet'?'e.g. Biscuit':'e.g. Sarah Chen'}" value="${esc(draft.name)}"></label>
+      <label class="fld"><span class="lab">Notes <span style="color:var(--ink-3);font-weight:400">(optional)</span></span>
+        <textarea class="inp" id="fNote" placeholder="Kids' names, car, works nights, met at the mailbox…">${esc(draft.note)}</textarea></label>
+      <button class="btn primary block" id="savePerson" style="margin-top:6px">Save</button>
+      ${existing?'<button class="btn danger block ghost" id="delPerson" style="margin-top:9px">Remove</button>':''}
+    </div>`;
+  document.body.appendChild(modal);
+  const close=()=>{modal.classList.remove('show');setTimeout(()=>modal.remove(),280);};
+  modal.querySelectorAll('.kindsel button').forEach(b=>b.onclick=()=>{
+    draft.kind=b.dataset.k; modal.querySelectorAll('.kindsel button').forEach(x=>x.classList.toggle('on',x===b));
+  });
+  modal.querySelector('#pickPhoto').onclick=()=>modal.querySelector('#fileInp').click();
+  const rm=modal.querySelector('#rmPhoto'); if(rm)rm.onclick=()=>{draft.photo=null;refreshEditorPhoto();};
+  modal.querySelector('#fileInp').onchange=e=>{
+    const f=e.target.files[0]; if(!f)return;
+    resizeImage(f,640,0.72).then(url=>{draft.photo=url;refreshEditorPhoto();});
+  };
+  function refreshEditorPhoto(){
+    const box=modal.querySelector('#pvBox');
+    box.innerHTML=draft.photo?`<img src="${draft.photo}">`:box.innerHTML;
+    // simplest: re-render editor photo area
+    modal.querySelector('#pickPhoto').textContent=draft.photo?'Change photo':'Add photo';
+    if(draft.photo && !modal.querySelector('#rmPhoto')){
+      const b=document.createElement('button'); b.className='mini'; b.id='rmPhoto'; b.textContent='Remove';
+      b.onclick=()=>{draft.photo=null;refreshEditorPhoto();}; modal.querySelector('#pickPhoto').after(b);
+    }
+    if(!draft.photo){const r=modal.querySelector('#rmPhoto');if(r)r.remove();
+      box.innerHTML=`<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h3l1.5-2h7L18 7h2a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="12.5" r="3.2"/></svg>`;}
+  }
+  modal.querySelector('#savePerson').onclick=()=>{
+    draft.name=modal.querySelector('#fName').value.trim();
+    draft.note=modal.querySelector('#fNote').value.trim();
+    if(!draft.name && !draft.photo){ toast('Add a name or photo first'); return; }
+    if(existing){ const i=u.people.findIndex(p=>p.id===personId); u.people[i]=draft; }
+    else u.people.push(draft);
+    persist(); close(); renderSheet(); refreshMap();
+    toast(existing?'Saved':'Added to '+(byId[selId].addr||'Lot '+byId[selId].lot));
+  };
+  const del=modal.querySelector('#delPerson');
+  if(del)del.onclick=()=>{ u.people=u.people.filter(p=>p.id!==personId);
+    if(!u.people.length) delete STATE.units[unitId];
+    persist(); close(); renderSheet(); refreshMap(); toast('Removed'); };
+}
+
+/* ---------------- search ---------------- */
+const searchEl=$('#search'), resultsEl=$('#results');
+searchEl.addEventListener('input',()=>runSearch(searchEl.value.trim()));
+searchEl.addEventListener('focus',()=>{ if(searchEl.value.trim())runSearch(searchEl.value.trim()); });
+function runSearch(q){
+  if(!q){resultsEl.classList.remove('show');return;}
+  const ql=q.toLowerCase(); const out=[];
+  LOTS.forEach(l=>{
+    const ppl=peopleOf(l.id);
+    const names=ppl.map(p=>p.name).filter(Boolean);
+    const nameHit=names.filter(n=>n.toLowerCase().includes(ql));
+    const addrHit=(l.addr||'').toLowerCase().includes(ql) || ('lot '+l.lot)===ql || l.lot===q;
+    if(nameHit.length||addrHit){
+      out.push({l, label: nameHit.length?nameHit.join(', '):(l.addr||'Lot '+l.lot),
+        sub: nameHit.length?(l.addr||'Lot '+l.lot):(ppl.length?ppl.map(p=>p.name).join(', '):effStatusLabel(l))});
+    }
+  });
+  out.sort((a,b)=>(peopleOf(b.l.id).length)-(peopleOf(a.l.id).length));
+  resultsEl.innerHTML = out.length? '' : '<div class="res-empty">No matches</div>';
+  out.slice(0,40).forEach(o=>{
+    const d=document.createElement('div'); d.className='res';
+    d.innerHTML=`<span class="ra mono">LOT ${esc(o.l.lot)}</span><div style="flex:1;min-width:0"><div class="rn">${esc(o.label)}</div><div class="rt">${esc(o.sub)}</div></div>`;
+    d.onclick=()=>{ resultsEl.classList.remove('show'); searchEl.blur();
+      if(view==='list')setView('map'); openSheet(o.l.id); };
+    resultsEl.appendChild(d);
+  });
+  resultsEl.classList.add('show');
+}
+document.addEventListener('click',e=>{
+  if(!resultsEl.contains(e.target)&&e.target!==searchEl&&!$('.search-wrap').contains(e.target))
+    resultsEl.classList.remove('show');
+});
+
+/* ---------------- list view ---------------- */
+function renderList(){
+  const scroll=$('#listscroll');
+  const withPeople=LOTS.filter(l=>peopleOf(l.id).length).sort((a,b)=>(a.addr||'zz').localeCompare(b.addr||'zz'));
+  const forSale=LOTS.filter(l=>ACTIVE_STATUS.has(effStatus(l))).sort((a,b)=>effStatus(a)-effStatus(b));
+  let html='';
+  if(!withPeople.length && !STATE._listedOnce){}
+  html+=`<div class="lgroup">Neighbors you've added · ${withPeople.length}</div>`;
+  if(!withPeople.length){
+    html+='<div class="list-empty">No neighbors yet.<br>Tap a unit on the map to add who lives there.</div>';
+  } else {
+    withPeople.forEach(l=>html+=lrow(l,true));
+  }
+  html+=`<div class="lgroup">For sale &amp; in progress · ${forSale.length}</div>`;
+  forSale.forEach(l=>html+=lrow(l,false));
+  scroll.innerHTML=html;
+  scroll.querySelectorAll('.lrow').forEach(r=>r.onclick=()=>{setView('map');openSheet(+r.dataset.id);});
+}
+function lrow(l,showPeople){
+  const ppl=peopleOf(l.id); const st=effStatus(l); const sc=STATUS_CLASSES[st]||'s0';
+  const avs=ppl.slice(0,4).map(p=>`<div class="av">${p.photo?`<img src="${p.photo}">`:esc(initials(p.name)||(p.kind==='pet'?'🐾':'?'))}</div>`).join('');
+  const price=effPrice(l);
+  return `<div class="lrow" data-id="${l.id}">
+    ${showPeople&&ppl.length?`<div class="avstack">${avs}</div>`:''}
+    <div style="flex:1;min-width:0">
+      <div class="laddr mono">${l.addr?esc(l.addr):'LOT '+esc(l.lot)}</div>
+      ${showPeople?`<div class="lppl">${ppl.map(p=>esc(p.name||(p.kind==='pet'?'Pet':'Unnamed'))).join(' · ')}</div>`
+        :`<div class="lname">Lot ${esc(l.lot)}${price?` · $${price.toLocaleString()}`:''}</div>`}
+    </div>
+    <span class="lstat pill ${sc}">${esc(effStatusLabel(l))}</span></div>`;
+}
+
+/* ---------------- view + mode toggles ---------------- */
+function setView(v){
+  view=v;
+  $('#listview').classList.toggle('show',v==='list');
+  $('#mapview').style.display=v==='list'?'none':'block';
+  $('#botbar').querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  $('#modeSeg').style.display=v==='list'?'none':'flex';
+  $('#zoomcol').style.display=v==='list'?'none':'flex';
+  $('#legend').classList.remove('show');
+  if(v==='list')renderList();
+}
+$('#viewSeg').onclick=e=>{const b=e.target.closest('button');if(b)setView(b.dataset.view);};
+$('#modeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  mode=b.dataset.mode; $('#modeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  buildLegend(); refreshMap();};
+$('#zoomIn').onclick=()=>zoomBy(1.6); $('#zoomOut').onclick=()=>zoomBy(1/1.6);
+$('#legBtn').onclick=()=>$('#legend').classList.toggle('show');
+
+function buildLegend(){
+  const leg=$('#legend');
+  if(mode==='neighbors'){
+    leg.innerHTML=`<h4>Map key</h4>
+      <div class="leg"><i style="background:var(--accent-soft);border-color:var(--accent)"></i>Has neighbors added</div>
+      <div class="leg"><i style="background:var(--accent)"></i>Pin = # of people/pets</div>
+      <div class="leg"><i style="background:var(--neutral-lot)"></i>No one added yet</div>`;
+  } else {
+    const items=[[1,'Move In Ready'],[3,'Under Construction'],[4,'For Sale'],[5,'Under Contract'],[9,'Coming Soon'],[6,'Sold'],[0,'Not listed']];
+    leg.innerHTML='<h4>Sale status</h4>'+items.map(([s,lab])=>
+      `<div class="leg"><i style="background:var(--s-${s})"></i>${lab}</div>`).join('');
+  }
+}
+
+/* ---------------- menu (backup / status refresh / theme) ---------------- */
+$('#menuBtn').onclick=openMenu;
+function openMenu(){
+  const total=LOTS.reduce((n,l)=>n+peopleOf(l.id).length,0);
+  const units=Object.keys(STATE.units).filter(id=>peopleOf(id).length).length;
+  sheetEl.innerHTML=`
+    <div class="grab"></div>
+    <div class="sheet-head"><h2>Clear Creek Neighbors</h2>
+      <div class="sub">${total} added · ${units} units · status as of ${esc(STATE.statusUpdated)}</div></div>
+    <div class="sheet-body">
+      <button class="menu-item" id="mBackup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        <span>Save a backup<small>Download all your neighbors as a file</small></span></button>
+      <button class="menu-item" id="mRestore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21V9m0 0 4 4m-4-4-4 4"/><path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/></svg>
+        <span>Restore from backup<small>Load neighbors from a saved file</small></span></button>
+      <button class="menu-item" id="mStatus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+        <span>Update sale status<small>Paste the latest from the builder's map</small></span></button>
+      <button class="menu-item" id="mTheme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9c-5 0-9-4-9-9Z"/></svg>
+        <span>Switch theme<small>Light, dark, or match your phone</small></span></button>
+      <div class="field-note" style="margin-top:18px">Everything lives only on this device — nothing is uploaded. Save a backup before clearing your browser, or to move to a new phone.</div>
+    </div>`;
+  showSheet(true);
+  $('#mBackup').onclick=doBackup; $('#mRestore').onclick=doRestore;
+  $('#mStatus').onclick=openStatusUpdate; $('#mTheme').onclick=cycleTheme;
+}
+function doBackup(){
+  const blob=new Blob([JSON.stringify({app:'ccneighbors',v:1,exported:new Date().toISOString(),state:STATE},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='clear-creek-neighbors-backup.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000); toast('Backup downloaded');
+}
+function doRestore(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json,.json';
+  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{try{const d=JSON.parse(r.result); const s=d.state||d;
+      if(!s.units){toast('That file doesn’t look right');return;}
+      STATE=Object.assign({version:1,units:{},status:{},statusUpdated:DATA.captured},s);
+      persist(); refreshMap(); showSheet(false); toast('Neighbors restored');
+    }catch(err){toast('Couldn’t read that file');}};
+    r.readAsText(f);};
+  inp.click();
+}
+function cycleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme');
+  const next=cur==='dark'?'light':cur==='light'?null:'dark';
+  if(next)document.documentElement.setAttribute('data-theme',next);
+  else document.documentElement.removeAttribute('data-theme');
+  try{localStorage.setItem('cctheme',next||'system');}catch(e){}
+  toast('Theme: '+(next||'match phone'));
+}
+function openStatusUpdate(){
+  const BM="javascript:(function(){try{var d=window.mkrData;if(!d){alert('Open the Clear Creek plat map first, then tap this.');return;}var a=Object.keys(d).map(function(k){var r=d[k];return{id:r.i,s:r.s,pr:r.pr||0}});var t=JSON.stringify(a);navigator.clipboard&&navigator.clipboard.writeText(t).then(function(){alert('Copied '+a.length+' units. Now paste into Neighbors.')},function(){prompt('Copy this:',t)});}catch(e){prompt('Copy this:',JSON.stringify(e.message));}})();";
+  sheetEl.innerHTML=`
+    <div class="grab"></div>
+    <div class="sheet-head"><h2 style="font-size:19px">Update sale status</h2>
+      <div class="sub">Refresh which units are sold, pending, or coming soon.</div></div>
+    <div class="sheet-body">
+      <div class="field-note" style="margin-bottom:10px">On a computer, open the builder's live map, run the bookmarklet below to copy the current data, then paste it here. (Your neighbors and photos are never touched — only sale status changes.)</div>
+      <label class="fld"><span class="lab">Paste data here</span>
+        <textarea class="inp" id="statusPaste" placeholder='[{"id":108954,"s":6,"pr":0}, ...]' style="min-height:120px;font-family:var(--mono);font-size:13px"></textarea></label>
+      <button class="btn primary block" id="applyStatus">Apply update</button>
+      <div class="section-label" style="margin-top:20px">Bookmarklet <span style="font-weight:400;text-transform:none;letter-spacing:0">(computer)</span></div>
+      <div class="field-note">Drag-save or copy this as a bookmark, open the map, then tap it:</div>
+      <textarea class="inp" readonly id="bmText" style="min-height:72px;font-family:var(--mono);font-size:11px">${esc(BM)}</textarea>
+      <button class="btn block ghost" id="copyBM" style="margin-top:8px">Copy bookmarklet</button>
+      <button class="btn block ghost" id="resetStatus" style="margin-top:8px">Reset to original snapshot (${esc(DATA.captured)})</button>
+    </div>`;
+  showSheet(true);
+  $('#copyBM').onclick=()=>{navigator.clipboard.writeText($('#bmText').value).then(()=>toast('Bookmarklet copied'),()=>{$('#bmText').select();});};
+  $('#applyStatus').onclick=()=>{
+    let arr; try{arr=JSON.parse($('#statusPaste').value);}catch(e){toast('That isn’t valid data');return;}
+    if(!Array.isArray(arr)){toast('Expected a list of units');return;}
+    let n=0;
+    arr.forEach(r=>{const l=byId[r.id]; if(!l)return;
+      const s=+r.s; const lab=DATA.statusLegend[s]||('Status '+s);
+      STATE.status[l.id]={status:s,statusLabel:lab,price:r.pr||0}; n++;});
+    STATE.statusUpdated=new Date().toISOString().slice(0,10);
+    persist(); refreshMap(); showSheet(false); toast('Updated '+n+' units');
+  };
+  $('#resetStatus').onclick=()=>{STATE.status={};STATE.statusUpdated=DATA.captured;persist();refreshMap();showSheet(false);toast('Reset to original snapshot');};
+}
+
+/* ---------------- helpers ---------------- */
+function mapLabel(l){ if(l.addr){const m=l.addr.match(/^\s*(\d+)/); if(m) return m[1];} return l.lot; }
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function initials(n){if(!n)return'';return n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();}
+function resizeImage(file,max,q){return new Promise(res=>{
+  const img=new Image(); img.onload=()=>{
+    let{width:w,height:h}=img; const sc=Math.min(1,max/Math.max(w,h)); w=Math.round(w*sc);h=Math.round(h*sc);
+    const c=document.createElement('canvas'); c.width=w;c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+    res(c.toDataURL('image/jpeg',q));
+  }; img.onerror=()=>res(null); img.src=URL.createObjectURL(file);
+});}
+let toastT;
+function toast(msg){let t=$('#toast'); if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2100);}
+
+$('#scrim').onclick=()=>showSheet(false);
+
+/* ---------------- boot ---------------- */
+(async function boot(){
+  try{const th=localStorage.getItem('cctheme'); if(th&&th!=='system')document.documentElement.setAttribute('data-theme',th);}catch(e){}
+  await Store.open();
+  const saved=await Store.load();
+  if(saved&&saved.units)STATE=Object.assign(STATE,saved);
+  buildMap(); buildLegend();
+  const tryFit=()=>{ if($('#mapview').clientWidth>0){ fitMap(); } else { requestAnimationFrame(tryFit); } };
+  requestAnimationFrame(tryFit);
+})();
+</script>
