@@ -150,6 +150,9 @@ button{font-family:inherit;cursor:pointer}
   max-height:92vh;display:flex;flex-direction:column;padding-bottom:var(--safe-b)}
 .sheet.show{transform:translateY(0)}
 .grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:9px auto 2px;flex:none}
+.grab,.sheet-head{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.sheet.dragging{transition:none}
+.sheet.dragging .grab,.sheet.dragging .sheet-head{cursor:grabbing}
 .sheet-head{padding:6px 18px 12px;border-bottom:1px solid var(--line);flex:none}
 .sheet-head .eyebrow{font-family:var(--mono);font-size:12px;color:var(--ink-3);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .sheet-head h2{margin:4px 0 0;font-size:20px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
@@ -503,6 +506,36 @@ function showSheet(on){ $('#scrim').classList.toggle('show',on); sheetEl.classLi
   if(!on){selId=null;refreshMap();} }
 const sheetEl=document.createElement('div'); sheetEl.className='sheet'; document.body.appendChild(sheetEl);
 
+/* Drag the grab handle / header down to close. Follows the finger, snaps back
+   if released early, dismisses on a long pull or a quick downward flick. */
+function sheetDrag(el,onDismiss){
+  let drag=false,pid=null,startY=0,dy=0,lastY=0,lastT=0,vy=0;
+  function settle(){ drag=false; el.classList.remove('dragging'); el.style.transform=''; }
+  el.addEventListener('pointerdown',e=>{
+    if(!e.target.closest('.grab,.sheet-head'))return;
+    if(e.target.closest('button,a,input,textarea,select'))return;
+    drag=true; pid=e.pointerId; startY=lastY=e.clientY; lastT=e.timeStamp; dy=0; vy=0;
+    el.classList.add('dragging');
+    try{el.setPointerCapture(pid);}catch(_){}
+    e.preventDefault();
+  });
+  el.addEventListener('pointermove',e=>{
+    if(!drag||e.pointerId!==pid)return;
+    dy=Math.max(0,e.clientY-startY);
+    const dt=e.timeStamp-lastT;
+    if(dt>0){ vy=(e.clientY-lastY)/dt; lastY=e.clientY; lastT=e.timeStamp; }
+    el.style.transform=`translateY(${dy}px)`;
+  });
+  el.addEventListener('pointerup',e=>{
+    if(!drag||e.pointerId!==pid)return;
+    const go = dy>Math.min(150,el.clientHeight/3) || (dy>30&&vy>0.6);
+    settle(); // re-enables the transition; the class change below animates from here
+    if(go)onDismiss();
+  });
+  el.addEventListener('pointercancel',e=>{ if(drag&&e.pointerId===pid)settle(); });
+}
+sheetDrag(sheetEl,()=>showSheet(false));
+
 function renderSheet(){
   const l=byId[selId]; const ppl=peopleOf(l.id);
   const st=effStatus(l), sc=STATUS_CLASSES[st]||'s0', price=effPrice(l);
@@ -563,6 +596,7 @@ function editPerson(unitId,personId){
     </div>`;
   document.body.appendChild(modal);
   const close=()=>{modal.classList.remove('show');setTimeout(()=>modal.remove(),280);};
+  sheetDrag(modal,close);
   modal.querySelectorAll('.kindsel button').forEach(b=>b.onclick=()=>{
     draft.kind=b.dataset.k; modal.querySelectorAll('.kindsel button').forEach(x=>x.classList.toggle('on',x===b));
   });
