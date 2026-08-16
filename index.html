@@ -77,8 +77,11 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---- Map ---- */
 #mapview{position:absolute;inset:0;touch-action:none;background:var(--bg);overflow:hidden}
-#svgwrap{position:absolute;inset:0}
-#map{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+/* Pan/zoom transforms go on this plain div, not the SVG: transformed SVG roots
+   often repaint their vector content every frame, while a div gets a compositor
+   layer and pans without any repaint. */
+#svgwrap{position:absolute;inset:0;transform-origin:0 0;will-change:transform}
+#map{position:absolute;top:0;left:0}
 #map .lot{stroke:var(--line-2);stroke-width:1.4;fill:var(--neutral-lot);transition:fill .18s,stroke .18s}
 #map.gesturing .lot{transition:none}
 #map text{text-rendering:optimizeSpeed}
@@ -405,7 +408,13 @@ function refreshMap(){
 /* ---------------- pan / zoom ---------------- */
 const T={x:0,y:0,k:1};
 let minK=0.2,maxK=6;
-function applyT(){ mapEl.style.transform=`translate(${T.x}px,${T.y}px) scale(${T.k})`; }
+const wrapEl=$('#svgwrap');
+let tRaf=0;
+function applyT(){ // coalesce to one style write per frame; translate3d keeps the layer on the GPU
+  if(tRaf)return;
+  tRaf=requestAnimationFrame(()=>{ tRaf=0;
+    wrapEl.style.transform=`translate3d(${T.x}px,${T.y}px,0) scale(${T.k})`; });
+}
 function fitMap(){
   const w=$('#mapview').clientWidth, h=$('#mapview').clientHeight;
   const vb=DATA.viewBox.split(' ').map(Number);
